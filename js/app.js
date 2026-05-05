@@ -543,6 +543,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         loadPasaje(currentPasaje);
         setupEventListeners();
         setupMobileOverlay();
+        setupScoreFullscreen();
+        setupMetronome();
         updateProgress();
 
     } catch (error) {
@@ -794,4 +796,115 @@ function setupMobileOverlay() {
     overlay.className = 'sidebar-overlay';
     document.body.appendChild(overlay);
     overlay.addEventListener('click', closeMobileMenu);
+}
+
+// ==========================================
+// FULLSCREEN SCORE
+// ==========================================
+
+function setupScoreFullscreen() {
+    const img = document.getElementById('manuscriptImg');
+    const overlayEl = document.getElementById('scoreOverlay');
+    const overlayImg = document.getElementById('scoreOverlayImg');
+
+    img.addEventListener('click', () => {
+        if (!img.src) return;
+        overlayImg.src = img.src;
+        overlayEl.classList.add('open');
+    });
+
+    overlayEl.addEventListener('click', () => {
+        overlayEl.classList.remove('open');
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') overlayEl.classList.remove('open');
+    });
+}
+
+// ==========================================
+// METRONOME
+// ==========================================
+
+let metroCtx = null;
+let metroInterval = null;
+let metroBpm = 140;
+let metroRunning = false;
+
+function setupMetronome() {
+    const slider = document.getElementById('metroSlider');
+    const bpmDisplay = document.getElementById('metroBpm');
+    const btn = document.getElementById('metroBtn');
+    const beat = document.getElementById('metroBeat');
+    const presets = document.querySelectorAll('.metro-preset');
+
+    slider.addEventListener('input', () => {
+        metroBpm = parseInt(slider.value);
+        bpmDisplay.textContent = metroBpm;
+        updateActivePreset();
+        if (metroRunning) restartMetronome();
+    });
+
+    presets.forEach(p => {
+        p.addEventListener('click', () => {
+            metroBpm = parseInt(p.dataset.bpm);
+            slider.value = metroBpm;
+            bpmDisplay.textContent = metroBpm;
+            updateActivePreset();
+            if (metroRunning) restartMetronome();
+        });
+    });
+
+    btn.addEventListener('click', () => {
+        if (metroRunning) {
+            stopMetronome();
+        } else {
+            startMetronome();
+        }
+    });
+
+    function tick() {
+        // Click sonoro con Web Audio API
+        if (!metroCtx) metroCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        const osc = metroCtx.createOscillator();
+        const gain = metroCtx.createGain();
+        osc.connect(gain);
+        gain.connect(metroCtx.destination);
+        osc.frequency.value = 1000;
+        gain.gain.setValueAtTime(0.4, metroCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, metroCtx.currentTime + 0.05);
+        osc.start(metroCtx.currentTime);
+        osc.stop(metroCtx.currentTime + 0.05);
+
+        // Flash visual
+        beat.classList.add('on');
+        setTimeout(() => beat.classList.remove('on'), 80);
+    }
+
+    function startMetronome() {
+        metroRunning = true;
+        btn.textContent = '■ Parar';
+        btn.classList.add('running');
+        tick();
+        metroInterval = setInterval(tick, (60 / metroBpm) * 1000);
+    }
+
+    function stopMetronome() {
+        metroRunning = false;
+        clearInterval(metroInterval);
+        btn.textContent = '▶ Iniciar';
+        btn.classList.remove('running');
+    }
+
+    function restartMetronome() {
+        clearInterval(metroInterval);
+        metroInterval = setInterval(tick, (60 / metroBpm) * 1000);
+    }
+
+    function updateActivePreset() {
+        presets.forEach(p => {
+            p.classList.toggle('active', parseInt(p.dataset.bpm) === metroBpm);
+        });
+    }
 }

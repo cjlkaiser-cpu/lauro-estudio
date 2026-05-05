@@ -420,6 +420,129 @@ body {
     border-radius: var(--radius);
 }
 
+/* Metronome */
+.metronome-section {
+    background-color: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--border-color);
+}
+
+.metronome-section h3 {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+.metronome-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.metronome-display {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+}
+
+.metro-beat {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background-color: var(--bg-tertiary);
+    border: 2px solid var(--border-color);
+    transition: background-color 0.05s, border-color 0.05s;
+    flex-shrink: 0;
+    align-self: center;
+}
+
+.metro-beat.on {
+    background-color: var(--accent-light);
+    border-color: var(--accent-light);
+    box-shadow: 0 0 8px var(--accent);
+}
+
+.metro-bpm {
+    font-size: 2.5rem;
+    font-weight: 700;
+    font-family: monospace;
+    color: var(--text-primary);
+    min-width: 4ch;
+    text-align: right;
+}
+
+.metro-label {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.metro-slider {
+    width: 100%;
+    max-width: 320px;
+    accent-color: var(--accent);
+    height: 6px;
+    cursor: pointer;
+}
+
+.metro-presets {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.metro-preset {
+    padding: 0.3rem 0.75rem;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.metro-preset:hover {
+    border-color: var(--accent);
+    color: var(--accent-light);
+}
+
+.metro-preset.active {
+    background-color: rgba(217, 119, 6, 0.15);
+    border-color: var(--accent);
+    color: var(--accent-light);
+}
+
+.metro-btn {
+    padding: 0.65rem 2.5rem;
+    background-color: var(--accent);
+    border: none;
+    border-radius: var(--radius);
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    letter-spacing: 0.02em;
+}
+
+.metro-btn:hover {
+    background-color: var(--accent-hover);
+}
+
+.metro-btn.running {
+    background-color: #dc2626;
+}
+
+.metro-btn.running:hover {
+    background-color: #b91c1c;
+}
+
 /* Manuscript / Score */
 .manuscript-container {
     background-color: #f8f4ec;
@@ -432,10 +555,47 @@ body {
     justify-content: center;
 }
 
+.zoom-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
 .manuscript-container img {
     max-width: 100%;
     height: auto;
     border-radius: 4px;
+    cursor: zoom-in;
+    transition: opacity 0.15s;
+}
+
+.manuscript-container img:hover {
+    opacity: 0.85;
+}
+
+/* Score fullscreen overlay */
+.score-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.95);
+    z-index: 500;
+    justify-content: center;
+    align-items: center;
+    cursor: zoom-out;
+    padding: 1rem;
+}
+
+.score-overlay.open {
+    display: flex;
+}
+
+.score-overlay img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: var(--radius);
+    touch-action: pinch-zoom;
 }
 
 /* Description */

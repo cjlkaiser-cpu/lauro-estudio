@@ -119,12 +119,39 @@
                     </div>
                 </div>
 
+                <!-- Metronome -->
+                <div class="metronome-section">
+                    <h3>Metrónomo</h3>
+                    <div class="metronome-container">
+                        <div class="metronome-display">
+                            <span class="metro-beat" id="metroBeat"></span>
+                            <span class="metro-bpm" id="metroBpm">140</span>
+                            <span class="metro-label">BPM</span>
+                        </div>
+                        <input type="range" class="metro-slider" id="metroSlider"
+                               min="40" max="240" value="140">
+                        <div class="metro-presets">
+                            <button class="metro-preset" data-bpm="60">60</button>
+                            <button class="metro-preset" data-bpm="80">80</button>
+                            <button class="metro-preset" data-bpm="100">100</button>
+                            <button class="metro-preset" data-bpm="120">120</button>
+                            <button class="metro-preset active" data-bpm="140">140 ♩</button>
+                        </div>
+                        <button class="metro-btn" id="metroBtn">▶ Iniciar</button>
+                    </div>
+                </div>
+
                 <!-- Score Image -->
                 <div class="manuscript-section">
-                    <h3>Partitura</h3>
+                    <h3>Partitura <span class="zoom-hint">— toca para ampliar</span></h3>
                     <div class="manuscript-container">
-                        <img id="manuscriptImg" src="" alt="Partitura">
+                        <img id="manuscriptImg" src="" alt="Partitura" title="Toca para ampliar">
                     </div>
+                </div>
+
+                <!-- Fullscreen overlay -->
+                <div class="score-overlay" id="scoreOverlay">
+                    <img id="scoreOverlayImg" src="" alt="Partitura ampliada">
                 </div>
 
                 <!-- Description -->
