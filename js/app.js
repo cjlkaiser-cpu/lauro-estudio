@@ -554,10 +554,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 function buildSidebar() {
     const sections = {
-        'section-parte-1': [],
-        'section-parte-2': [],
-        'section-parte-3': [],
-        'section-parte-4': []
+        'section-seccion-a': [],
+        'section-seccion-b': [],
+        'section-seccion-c': [],
+        'section-seccion-coda': []
     };
 
     PASAJES.forEach((p, index) => {

@@ -1,76 +1,66 @@
-// Pasajes de María Carolina — Antonio Lauro (arm. Luis Álvarez)
+// María Carolina — Antonio Lauro (arm. Luis Álvarez)
+// Estructura: A – B – A – C – A – Coda
 // 6/8 · ♩= 140 · 104 compases
+
 const PASAJES = [
 
-    // ── PARTE I: EXPOSICIÓN ──────────────────────────────────────────────────
+    // ── SECCIÓN A · La menor ─────────────────────────────────────────────────
     {
         numero: 1,
-        titulo: "Motivo inicial",
-        compases: "1–8",
+        titulo: "Sección A · 1ª vez",
+        compases: "1–18",
         imagen: "img/pagina_1.png",
         texto: "",
-        seccion: "parte-1"
+        seccion: "seccion-a"
     },
+
+    // ── SECCIÓN B · La mayor ─────────────────────────────────────────────────
     {
         numero: 2,
-        titulo: "Respuesta y voltas",
-        compases: "9–20",
-        imagen: "img/pagina_1.png",
+        titulo: "Sección B",
+        compases: "19–34",
+        imagen: "img/pagina_2.png",
         texto: "",
-        seccion: "parte-1"
+        seccion: "seccion-b"
     },
 
-    // ── PARTE II: DESARROLLO ─────────────────────────────────────────────────
+    // ── SECCIÓN A · La menor ─────────────────────────────────────────────────
     {
         numero: 3,
-        titulo: "Segundo tema",
-        compases: "21–32",
+        titulo: "Sección A · 2ª vez",
+        compases: "35–50",
         imagen: "img/pagina_2.png",
         texto: "",
-        seccion: "parte-2"
+        seccion: "seccion-a"
     },
+
+    // ── SECCIÓN C ────────────────────────────────────────────────────────────
     {
         numero: 4,
-        titulo: "Intensificación y voltas",
-        compases: "33–48",
-        imagen: "img/pagina_2.png",
+        titulo: "Sección C",
+        compases: "51–72",
+        imagen: "img/pagina_3.png",
         texto: "",
-        seccion: "parte-2"
+        seccion: "seccion-c"
     },
 
-    // ── PARTE III: CENTRO ────────────────────────────────────────────────────
+    // ── SECCIÓN A · La menor ─────────────────────────────────────────────────
     {
         numero: 5,
-        titulo: "Material central",
-        compases: "49–60",
-        imagen: "img/pagina_3.png",
+        titulo: "Sección A · 3ª vez",
+        compases: "73–89",
+        imagen: "img/pagina_4.png",
         texto: "",
-        seccion: "parte-3"
-    },
-    {
-        numero: 6,
-        titulo: "Modulación hacia Mi mayor",
-        compases: "61–76",
-        imagen: "img/pagina_3.png",
-        texto: "",
-        seccion: "parte-3"
+        seccion: "seccion-a"
     },
 
-    // ── PARTE IV: FINAL ──────────────────────────────────────────────────────
+    // ── CODA · La mayor ──────────────────────────────────────────────────────
     {
-        numero: 7,
-        titulo: "Reexposición en Mi mayor",
-        compases: "77–88",
+        numero: 6,
+        titulo: "Coda",
+        compases: "90–104",
         imagen: "img/pagina_4.png",
         texto: "",
-        seccion: "parte-4"
-    },
-    {
-        numero: 8,
-        titulo: "Coda y fermata final",
-        compases: "89–104",
-        imagen: "img/pagina_4.png",
-        texto: "",
-        seccion: "parte-4"
+        seccion: "seccion-coda"
     }
 ];
