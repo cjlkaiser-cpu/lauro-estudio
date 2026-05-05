@@ -413,13 +413,19 @@ let recordingTimer = null;
 
 async function startRecording() {
     try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const stream = await navigator.mediaDevices.getUserMedia({
+            audio: { echoCancellation: true, noiseSuppression: true }
+        });
 
-        const mimeType = MediaRecorder.isTypeSupported('audio/webm')
-            ? 'audio/webm'
-            : 'audio/mp4';
+        const audioCandidates = [
+            'audio/webm;codecs=opus',
+            'audio/webm',
+            'audio/ogg;codecs=opus',
+            'audio/mp4',
+        ];
+        const mimeType = audioCandidates.find(t => MediaRecorder.isTypeSupported(t)) || '';
 
-        mediaRecorder = new MediaRecorder(stream, { mimeType });
+        mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
         audioChunks = [];
 
         mediaRecorder.ondataavailable = (event) => {
@@ -428,7 +434,7 @@ async function startRecording() {
 
         mediaRecorder.onstop = async () => {
             stream.getTracks().forEach(track => track.stop());
-            const audioBlob = new Blob(audioChunks, { type: mimeType });
+            const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || mimeType });
             await saveRecordingToDB(currentPasaje, audioBlob);
 
             elements.audioOptions.style.display = 'flex';
@@ -479,17 +485,32 @@ let videoTimer = null;
 
 async function startVideoRecording() {
     try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user' },
+            audio: { echoCancellation: true, noiseSuppression: true }
+        });
+
+        // Verificar que el stream tiene pista de audio
+        const audioTracks = stream.getAudioTracks();
+        if (audioTracks.length === 0) {
+            showNotification('Aviso: no se detectó micrófono', 'info');
+        }
 
         elements.webcamPreview.srcObject = stream;
 
-        const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')
-            ? 'video/webm;codecs=vp9,opus'
-            : MediaRecorder.isTypeSupported('video/webm')
-                ? 'video/webm'
-                : 'video/mp4';
+        // Orden de preferencia: codecs con audio explícito primero
+        const candidates = [
+            'video/webm;codecs=vp9,opus',
+            'video/webm;codecs=vp8,opus',
+            'video/webm;codecs=h264,opus',
+            'video/webm;codecs=vp9',
+            'video/webm',
+            'video/mp4;codecs=h264,aac',
+            'video/mp4',
+        ];
+        const mimeType = candidates.find(t => MediaRecorder.isTypeSupported(t)) || '';
 
-        videoRecorder = new MediaRecorder(stream, { mimeType });
+        videoRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
         videoChunks = [];
 
         videoRecorder.ondataavailable = (e) => {
@@ -499,7 +520,7 @@ async function startVideoRecording() {
         videoRecorder.onstop = async () => {
             stream.getTracks().forEach(t => t.stop());
             elements.webcamPreview.srcObject = null;
-            const videoBlob = new Blob(videoChunks, { type: mimeType });
+            const videoBlob = new Blob(videoChunks, { type: videoRecorder.mimeType || mimeType });
             await saveVideoToDB(currentPasaje, videoBlob);
             elements.audioOptions.style.display = 'flex';
             elements.videoRecorderActive.style.display = 'none';
