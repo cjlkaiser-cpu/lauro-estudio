@@ -3,7 +3,7 @@
 // ==========================================
 
 const DB_NAME = 'LauroStudyDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 let db = null;
 
 function initDB() {
@@ -25,8 +25,14 @@ function initDB() {
             if (!database.objectStoreNames.contains('photoFiles')) {
                 database.createObjectStore('photoFiles', { keyPath: 'id' });
             }
-            const recordingsStore = database.createObjectStore('recordings', { keyPath: 'recordingId' });
-            recordingsStore.createIndex('pasajeId', 'pasajeId', { unique: false });
+            if (!database.objectStoreNames.contains('recordings')) {
+                const recordingsStore = database.createObjectStore('recordings', { keyPath: 'recordingId' });
+                recordingsStore.createIndex('pasajeId', 'pasajeId', { unique: false });
+            }
+            if (!database.objectStoreNames.contains('videos')) {
+                const videosStore = database.createObjectStore('videos', { keyPath: 'videoId' });
+                videosStore.createIndex('pasajeId', 'pasajeId', { unique: false });
+            }
         };
     });
 }
@@ -176,6 +182,7 @@ async function exportData() {
         const studyData = await loadStudyDataFromDB();
         const recordings = await getAllRecordingsFromDB();
         const photos = await getAllPhotosFromDB();
+        const videos = await getAllVideosFromDB();
 
         const recordingsBase64 = await Promise.all(
             recordings.map(async (item) => {
@@ -197,12 +204,23 @@ async function exportData() {
             })
         );
 
+        const videosBase64 = await Promise.all(
+            videos.map(async (item) => {
+                if (item.video instanceof Blob) {
+                    const base64 = await blobToBase64(item.video);
+                    return { ...item, video: base64 };
+                }
+                return item;
+            })
+        );
+
         const exportObj = {
-            version: 1,
+            version: 2,
             exportDate: new Date().toISOString(),
             studyData,
             recordings: recordingsBase64,
-            photoFiles: photosBase64
+            photoFiles: photosBase64,
+            videoFiles: videosBase64
         };
 
         const json = JSON.stringify(exportObj);
@@ -266,6 +284,21 @@ async function importData(file) {
             }
         }
 
+        if (data.videoFiles) {
+            for (const item of data.videoFiles) {
+                if (item.video) {
+                    const blob = base64ToBlob(item.video);
+                    const transaction = db.transaction(['videos'], 'readwrite');
+                    const store = transaction.objectStore('videos');
+                    await new Promise((resolve, reject) => {
+                        const request = store.put({ ...item, video: blob });
+                        request.onsuccess = () => resolve();
+                        request.onerror = () => reject(request.error);
+                    });
+                }
+            }
+        }
+
         studyData = await loadStudyDataFromDB();
         buildSidebar();
         loadPasaje(currentPasaje);
@@ -309,6 +342,64 @@ function showNotification(message, type = 'info') {
         notification.classList.remove('show');
         setTimeout(() => notification.remove(), 300);
     }, 3000);
+}
+
+// ==========================================
+// VIDEOS IndexedDB
+// ==========================================
+
+function saveVideoToDB(pasajeId, videoBlob, name = null) {
+    if (!db) return Promise.resolve();
+    return new Promise(async (resolve, reject) => {
+        const existing = await getVideosForPasaje(pasajeId);
+        const takeNumber = existing.length + 1;
+        const video = {
+            videoId: `${pasajeId}_v_${Date.now()}`,
+            pasajeId,
+            name: name || `Vídeo ${takeNumber}`,
+            date: new Date().toISOString(),
+            video: videoBlob
+        };
+        const transaction = db.transaction(['videos'], 'readwrite');
+        const store = transaction.objectStore('videos');
+        const request = store.put(video);
+        request.onsuccess = () => resolve(video);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+function getVideosForPasaje(pasajeId) {
+    if (!db) return Promise.resolve([]);
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['videos'], 'readonly');
+        const store = transaction.objectStore('videos');
+        const index = store.index('pasajeId');
+        const request = index.getAll(pasajeId);
+        request.onsuccess = () => resolve(request.result.sort((a, b) => new Date(b.date) - new Date(a.date)));
+        request.onerror = () => reject(request.error);
+    });
+}
+
+function deleteVideoFromDB(videoId) {
+    if (!db) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['videos'], 'readwrite');
+        const store = transaction.objectStore('videos');
+        const request = store.delete(videoId);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+    });
+}
+
+function getAllVideosFromDB() {
+    if (!db) return Promise.resolve([]);
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['videos'], 'readonly');
+        const store = transaction.objectStore('videos');
+        const request = store.getAll();
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
 }
 
 // ==========================================
@@ -375,6 +466,156 @@ function updateRecordingTime() {
     const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
     const seconds = (elapsed % 60).toString().padStart(2, '0');
     elements.recTime.textContent = `${minutes}:${seconds}`;
+}
+
+// ==========================================
+// GRABADOR DE VÍDEO
+// ==========================================
+
+let videoRecorder = null;
+let videoChunks = [];
+let videoStartTime = null;
+let videoTimer = null;
+
+async function startVideoRecording() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+
+        elements.webcamPreview.srcObject = stream;
+
+        const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')
+            ? 'video/webm;codecs=vp9,opus'
+            : MediaRecorder.isTypeSupported('video/webm')
+                ? 'video/webm'
+                : 'video/mp4';
+
+        videoRecorder = new MediaRecorder(stream, { mimeType });
+        videoChunks = [];
+
+        videoRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) videoChunks.push(e.data);
+        };
+
+        videoRecorder.onstop = async () => {
+            stream.getTracks().forEach(t => t.stop());
+            elements.webcamPreview.srcObject = null;
+            const videoBlob = new Blob(videoChunks, { type: mimeType });
+            await saveVideoToDB(currentPasaje, videoBlob);
+            elements.audioOptions.style.display = 'flex';
+            elements.videoRecorderActive.style.display = 'none';
+            await renderVideosList(currentPasaje);
+            showNotification('Vídeo guardado', 'success');
+        };
+
+        videoRecorder.start();
+        videoStartTime = Date.now();
+        elements.audioOptions.style.display = 'none';
+        elements.videoRecorderActive.style.display = 'flex';
+        videoTimer = setInterval(updateVideoTime, 1000);
+        updateVideoTime();
+
+    } catch (error) {
+        console.error('Error al acceder a la cámara:', error);
+        if (error.name === 'NotAllowedError') {
+            showNotification('Permiso de cámara denegado', 'error');
+        } else {
+            showNotification('Error al iniciar grabación de vídeo', 'error');
+        }
+    }
+}
+
+function stopVideoRecording() {
+    if (videoRecorder && videoRecorder.state !== 'inactive') {
+        videoRecorder.stop();
+        clearInterval(videoTimer);
+    }
+}
+
+function updateVideoTime() {
+    const elapsed = Math.floor((Date.now() - videoStartTime) / 1000);
+    const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+    const seconds = (elapsed % 60).toString().padStart(2, '0');
+    elements.recVideoTime.textContent = `${minutes}:${seconds}`;
+}
+
+// ==========================================
+// LISTA DE VÍDEOS
+// ==========================================
+
+async function renderVideosList(pasajeId) {
+    const videos = await getVideosForPasaje(pasajeId);
+    const container = elements.videosList;
+
+    if (videos.length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+
+    container.innerHTML = videos.map(rec => {
+        const date = new Date(rec.date).toLocaleDateString('es-ES', {
+            day: '2-digit', month: '2-digit', year: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+        });
+        return `
+            <div class="recording-item video-item" data-video-id="${rec.videoId}">
+                <span class="recording-icon">🎬</span>
+                <div class="recording-info">
+                    <div class="recording-name">${rec.name}</div>
+                    <div class="recording-date">${date}</div>
+                </div>
+                <div class="recording-actions">
+                    <button class="play-btn play-video-btn" data-video-id="${rec.videoId}" title="Reproducir">▶</button>
+                    <button class="delete-recording-btn delete-video-btn" data-video-id="${rec.videoId}" title="Eliminar">✕</button>
+                </div>
+            </div>
+            <div class="video-player-container" id="player_${rec.videoId}" style="display:none;">
+                <video class="video-playback" controls></video>
+            </div>
+        `;
+    }).join('');
+
+    container.querySelectorAll('.play-video-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            await playVideo(e.currentTarget.dataset.videoId, e.currentTarget);
+        });
+    });
+
+    container.querySelectorAll('.delete-video-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const videoId = e.currentTarget.dataset.videoId;
+            if (confirm('¿Eliminar este vídeo?')) {
+                await deleteVideoFromDB(videoId);
+                await renderVideosList(pasajeId);
+                showNotification('Vídeo eliminado', 'info');
+            }
+        });
+    });
+}
+
+async function playVideo(videoId, button) {
+    const playerContainer = document.getElementById(`player_${videoId}`);
+    const videoEl = playerContainer.querySelector('video');
+    const isOpen = playerContainer.style.display !== 'none';
+
+    // Cerrar todos los players abiertos
+    document.querySelectorAll('.video-player-container').forEach(el => {
+        el.style.display = 'none';
+        el.querySelector('video').src = '';
+    });
+    document.querySelectorAll('.play-video-btn').forEach(b => b.textContent = '▶');
+
+    if (isOpen) return;
+
+    const videos = await getVideosForPasaje(currentPasaje);
+    const rec = videos.find(v => v.videoId === videoId);
+    if (!rec) return;
+
+    const url = URL.createObjectURL(rec.video);
+    videoEl.src = url;
+    videoEl.onended = () => URL.revokeObjectURL(url);
+    playerContainer.style.display = 'block';
+    button.textContent = '⏹';
+    videoEl.play();
 }
 
 // ==========================================
@@ -513,6 +754,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         elements.recTime = document.getElementById('recTime');
         elements.stopBtn = document.getElementById('stopBtn');
         elements.recordingsList = document.getElementById('recordingsList');
+        elements.recordVideoBtn = document.getElementById('recordVideoBtn');
+        elements.videoRecorderActive = document.getElementById('videoRecorderActive');
+        elements.webcamPreview = document.getElementById('webcamPreview');
+        elements.recVideoTime = document.getElementById('recVideoTime');
+        elements.stopVideoBtn = document.getElementById('stopVideoBtn');
+        elements.videosList = document.getElementById('videosList');
         elements.photoUploadArea = document.getElementById('photoUploadArea');
         elements.photoUploadBtn = document.getElementById('photoUploadBtn');
         elements.photoInput = document.getElementById('photoInput');
@@ -627,7 +874,9 @@ async function loadPasaje(index) {
 
     elements.audioOptions.style.display = 'flex';
     elements.recorderActive.style.display = 'none';
+    elements.videoRecorderActive.style.display = 'none';
     await renderRecordingsList(index);
+    await renderVideosList(index);
 
     const photoBlob = await loadPhotoFromDB(index);
     if (photoBlob) {
@@ -705,6 +954,8 @@ function setupEventListeners() {
 
     elements.recordBtn.addEventListener('click', startRecording);
     elements.stopBtn.addEventListener('click', stopRecording);
+    elements.recordVideoBtn.addEventListener('click', startVideoRecording);
+    elements.stopVideoBtn.addEventListener('click', stopVideoRecording);
 
     elements.uploadBtn.addEventListener('click', () => elements.audioInput.click());
     elements.audioInput.addEventListener('change', async (e) => {

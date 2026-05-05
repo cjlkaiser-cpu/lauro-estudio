@@ -167,7 +167,11 @@
                         <div class="audio-options" id="audioOptions">
                             <button class="record-btn" id="recordBtn">
                                 <span class="record-icon">🎤</span>
-                                <span>Grabar</span>
+                                <span>Audio</span>
+                            </button>
+                            <button class="record-btn record-btn-video" id="recordVideoBtn">
+                                <span class="record-icon">📹</span>
+                                <span>Vídeo</span>
                             </button>
                             <span class="audio-separator">o</span>
                             <input type="file" id="audioInput" accept="audio/*" hidden>
@@ -186,7 +190,20 @@
                                 <span>■</span> Parar
                             </button>
                         </div>
+                        <!-- Webcam preview durante grabación de vídeo -->
+                        <div class="video-recorder-active" id="videoRecorderActive" style="display: none;">
+                            <video id="webcamPreview" autoplay muted playsinline class="webcam-preview"></video>
+                            <div class="recording-indicator">
+                                <span class="rec-dot"></span>
+                                <span class="rec-text">REC</span>
+                                <span class="rec-time" id="recVideoTime">00:00</span>
+                            </div>
+                            <button class="stop-btn" id="stopVideoBtn">
+                                <span>■</span> Parar
+                            </button>
+                        </div>
                         <div class="recordings-list" id="recordingsList"></div>
+                        <div class="recordings-list" id="videosList"></div>
                     </div>
                 </div>
 
