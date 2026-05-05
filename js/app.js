@@ -490,8 +490,12 @@ async function startVideoRecording() {
             audio: { echoCancellation: true, noiseSuppression: true }
         });
 
-        // Verificar que el stream tiene pista de audio
+        // Diagnóstico de tracks
         const audioTracks = stream.getAudioTracks();
+        const videoTracks = stream.getVideoTracks();
+        console.log(`[Video] Audio tracks: ${audioTracks.length}, Video tracks: ${videoTracks.length}`);
+        audioTracks.forEach((t, i) => console.log(`  Audio[${i}]: ${t.label}, enabled=${t.enabled}, muted=${t.muted}`));
+
         if (audioTracks.length === 0) {
             showNotification('Aviso: no se detectó micrófono', 'info');
         }
@@ -509,8 +513,11 @@ async function startVideoRecording() {
             'video/mp4',
         ];
         const mimeType = candidates.find(t => MediaRecorder.isTypeSupported(t)) || '';
+        console.log(`[Video] mimeType elegido: "${mimeType}"`);
+        console.log(`[Video] Soporte codecs:`, candidates.map(t => `${t}: ${MediaRecorder.isTypeSupported(t)}`));
 
         videoRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
+        console.log(`[Video] MediaRecorder mimeType real: "${videoRecorder.mimeType}"`);
         videoChunks = [];
 
         videoRecorder.ondataavailable = (e) => {
