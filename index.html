@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Joropo · Antonio Lauro — Plan de Estudio</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h1>Joropo</h1>
+                <p class="composer">Antonio Lauro</p>
+                <p class="subtitle">Arm. Luis Álvarez · Plan de Estudio</p>
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <span class="progress-text" id="progressText">0/8 completados</span>
+                </div>
+
+                <div class="backup-buttons">
+                    <button class="backup-btn" id="exportBtn" title="Exportar backup">
+                        <span>📥</span> Exportar
+                    </button>
+                    <button class="backup-btn" id="importBtn" title="Importar backup">
+                        <span>📤</span> Importar
+                    </button>
+                    <input type="file" id="importInput" accept=".json" hidden>
+                </div>
+            </div>
+
+            <nav class="sections-nav" id="sectionsNav">
+                <div class="section-group">
+                    <button class="section-header" data-section="parte-1">
+                        <span class="section-icon">▼</span>
+                        <span class="section-title">Parte I · Exposición</span>
+                        <span class="section-count">1–20</span>
+                    </button>
+                    <div class="section-items" id="section-parte-1"></div>
+                </div>
+
+                <div class="section-group">
+                    <button class="section-header" data-section="parte-2">
+                        <span class="section-icon">▶</span>
+                        <span class="section-title">Parte II · Desarrollo</span>
+                        <span class="section-count">21–48</span>
+                    </button>
+                    <div class="section-items collapsed" id="section-parte-2"></div>
+                </div>
+
+                <div class="section-group">
+                    <button class="section-header" data-section="parte-3">
+                        <span class="section-icon">▶</span>
+                        <span class="section-title">Parte III · Centro</span>
+                        <span class="section-count">49–76</span>
+                    </button>
+                    <div class="section-items collapsed" id="section-parte-3"></div>
+                </div>
+
+                <div class="section-group">
+                    <button class="section-header" data-section="parte-4">
+                        <span class="section-icon">▶</span>
+                        <span class="section-title">Parte IV · Final</span>
+                        <span class="section-count">77–104</span>
+                    </button>
+                    <div class="section-items collapsed" id="section-parte-4"></div>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Mobile menu button -->
+        <button class="mobile-menu-btn" id="mobileMenuBtn">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+
+        <!-- Main Content -->
+        <main class="main-content" id="mainContent">
+            <div class="pasaje-view" id="pasajeView">
+                <!-- Header -->
+                <div class="variation-header">
+                    <div class="nav-buttons">
+                        <button class="nav-btn" id="prevBtn" title="Anterior">◀</button>
+                        <div class="title-block">
+                            <h2 class="variation-title" id="pasajeTitulo">Cargando…</h2>
+                            <span class="compases-badge" id="pasajeCompases"></span>
+                        </div>
+                        <button class="nav-btn" id="nextBtn" title="Siguiente">▶</button>
+                    </div>
+                    <div class="variation-status">
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="completedCheckbox">
+                            <span class="checkmark"></span>
+                            <span class="checkbox-label">Estudiado</span>
+                        </label>
+                        <span class="date-completed" id="dateCompleted"></span>
+                    </div>
+                </div>
+
+                <!-- Score Image -->
+                <div class="manuscript-section">
+                    <h3>Partitura</h3>
+                    <div class="manuscript-container">
+                        <img id="manuscriptImg" src="" alt="Partitura">
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="description-section">
+                    <h3>Análisis</h3>
+                    <p id="pasajeDescripcion"></p>
+                </div>
+
+                <!-- Recording Section -->
+                <div class="recording-section">
+                    <h3>Mis Grabaciones</h3>
+                    <div class="recording-container">
+                        <div class="audio-options" id="audioOptions">
+                            <button class="record-btn" id="recordBtn">
+                                <span class="record-icon">🎤</span>
+                                <span>Grabar</span>
+                            </button>
+                            <span class="audio-separator">o</span>
+                            <input type="file" id="audioInput" accept="audio/*" hidden>
+                            <button class="upload-btn" id="uploadBtn">
+                                <span class="upload-icon">📁</span>
+                                <span>Subir archivo</span>
+                            </button>
+                        </div>
+                        <div class="recorder-active" id="recorderActive" style="display: none;">
+                            <div class="recording-indicator">
+                                <span class="rec-dot"></span>
+                                <span class="rec-text">REC</span>
+                                <span class="rec-time" id="recTime">00:00</span>
+                            </div>
+                            <button class="stop-btn" id="stopBtn">
+                                <span>■</span> Parar
+                            </button>
+                        </div>
+                        <div class="recordings-list" id="recordingsList"></div>
+                    </div>
+                </div>
+
+                <!-- My Score Photo Section -->
+                <div class="score-photo-section">
+                    <h3>Mi Partitura Anotada</h3>
+                    <div class="score-photo-container">
+                        <div class="photo-upload-area" id="photoUploadArea">
+                            <input type="file" id="photoInput" accept="image/*" hidden>
+                            <button class="photo-upload-btn" id="photoUploadBtn">
+                                <span class="photo-icon">📷</span>
+                                <span>Subir foto</span>
+                            </button>
+                            <p class="upload-hint">JPG, PNG, HEIC…</p>
+                        </div>
+                        <div class="photo-preview-container" id="photoPreviewContainer" style="display: none;">
+                            <img id="photoPreview" src="" alt="Mi partitura anotada">
+                            <button class="remove-photo-btn" id="removePhotoBtn" title="Eliminar foto">✕</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notes Section -->
+                <div class="notes-section">
+                    <h3>Mis Notas</h3>
+                    <textarea id="notesTextarea" placeholder="Dificultades técnicas, digitación, ideas de interpretación…"></textarea>
+                    <div class="notes-footer">
+                        <span class="autosave-indicator" id="autosaveIndicator">Guardado automático</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/data.js?v=1"></script>
+    <script src="js/app.js?v=1"></script>
+</body>
+</html>
