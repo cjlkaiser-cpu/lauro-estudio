@@ -1,4 +1,4 @@
-// Pasajes del Joropo de Antonio Lauro (arm. Luis Álvarez)
+// Pasajes de María Carolina — Antonio Lauro (arm. Luis Álvarez)
 // 6/8 · ♩= 140 · 104 compases
 const PASAJES = [
 
