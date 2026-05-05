@@ -607,6 +607,8 @@ async function loadPasaje(index) {
     elements.manuscriptImg.src = pasaje.imagen;
     elements.manuscriptImg.alt = `Partitura – ${pasaje.titulo}`;
     elements.pasajeDescripcion.textContent = pasaje.texto;
+    elements.pasajeDescripcion.closest('.description-section').style.display =
+        pasaje.texto ? 'block' : 'none';
 
     elements.completedCheckbox.checked = data.completed || false;
     elements.dateCompleted.textContent = data.completedDate
