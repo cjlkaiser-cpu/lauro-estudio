@@ -485,20 +485,31 @@ let videoTimer = null;
 
 async function startVideoRecording() {
     try {
-        // Pedir audio y vídeo por separado para evitar muted=true en el stream combinado
-        const [audioStream, videoStream] = await Promise.all([
-            navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }),
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })
-        ]);
+        // Audio primero, en serie — evita que abrir la cámara interfiera con el micro
+        const audioStream = await navigator.mediaDevices.getUserMedia({
+            audio: { echoCancellation: true, noiseSuppression: true }
+        });
 
-        // Combinar pistas en un único stream para el MediaRecorder
+        // Esperar a que el track de audio esté activo (macOS lo inicia como muted=true)
+        const audioTrack = audioStream.getAudioTracks()[0];
+        if (audioTrack && audioTrack.muted) {
+            await new Promise(resolve => {
+                audioTrack.addEventListener('unmute', resolve, { once: true });
+                setTimeout(resolve, 1500); // fallback por si el evento no llega
+            });
+        }
+
+        const videoStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user' }
+        });
+
         const stream = new MediaStream([
             ...videoStream.getVideoTracks(),
             ...audioStream.getAudioTracks()
         ]);
 
-        if (stream.getAudioTracks().length === 0) {
-            showNotification('Aviso: no se detectó micrófono', 'info');
+        if (stream.getAudioTracks().length === 0 || stream.getAudioTracks()[0]?.muted) {
+            showNotification('Aviso: sin audio — comprueba los permisos del micrófono', 'info');
         }
 
         // Preview solo vídeo (sin retroalimentación de audio)
@@ -534,7 +545,8 @@ async function startVideoRecording() {
             showNotification('Vídeo guardado', 'success');
         };
 
-        videoRecorder.start();
+        // timeslice 500ms: fuerza flush periódico de datos al ondataavailable
+        videoRecorder.start(500);
         videoStartTime = Date.now();
         elements.audioOptions.style.display = 'none';
         elements.videoRecorderActive.style.display = 'flex';
@@ -544,7 +556,7 @@ async function startVideoRecording() {
     } catch (error) {
         console.error('Error al acceder a la cámara:', error);
         if (error.name === 'NotAllowedError') {
-            showNotification('Permiso de cámara denegado', 'error');
+            showNotification('Permiso de cámara/micrófono denegado', 'error');
         } else {
             showNotification('Error al iniciar grabación de vídeo', 'error');
         }
