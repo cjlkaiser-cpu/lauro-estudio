@@ -192,9 +192,20 @@
                                 <span>■</span> Parar
                             </button>
                         </div>
+                        <!-- Cuenta atrás antes de grabar vídeo -->
+                        <div class="countdown-overlay" id="countdownOverlay" style="display: none;">
+                            <span class="countdown-number" id="countdownNumber">3</span>
+                        </div>
                         <!-- Webcam preview durante grabación de vídeo -->
                         <div class="video-recorder-active" id="videoRecorderActive" style="display: none;">
-                            <video id="webcamPreview" autoplay muted playsinline class="webcam-preview"></video>
+                            <div class="video-recorder-layout">
+                                <div class="webcam-wrapper">
+                                    <video id="webcamPreview" autoplay muted playsinline class="webcam-preview"></video>
+                                </div>
+                                <div class="score-thumb-wrapper">
+                                    <img id="scoreThumbnail" class="score-thumbnail" src="" alt="Partitura">
+                                </div>
+                            </div>
                             <div class="recording-indicator">
                                 <span class="rec-dot"></span>
                                 <span class="rec-text">REC</span>
@@ -240,7 +251,7 @@
         </main>
     </div>
 
-    <script src="js/data.js?v=5"></script>
-    <script src="js/app.js?v=5"></script>
+    <script src="js/data.js?v=6"></script>
+    <script src="js/app.js?v=6"></script>
 </body>
 </html>

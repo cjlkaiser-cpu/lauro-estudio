@@ -501,8 +501,15 @@ async function startVideoRecording() {
             showNotification('Aviso: no se detectó micrófono', 'info');
         }
 
-        // Preview solo vídeo (sin retroalimentación de audio)
+        // Preview solo vídeo (sin retroalimentación de audio) + miniatura de partitura
         elements.webcamPreview.srcObject = videoStream;
+        elements.scoreThumbnail.src = PASAJES[currentPasaje].imagen;
+
+        // Cuenta atrás 3-2-1
+        await runCountdown();
+
+        // Mostrar interfaz de grabación
+        elements.videoRecorderActive.style.display = 'flex';
 
         const candidates = [
             'video/webm;codecs=vp9,opus',
@@ -536,12 +543,12 @@ async function startVideoRecording() {
 
         videoRecorder.start();
         videoStartTime = Date.now();
-        elements.audioOptions.style.display = 'none';
-        elements.videoRecorderActive.style.display = 'flex';
         videoTimer = setInterval(updateVideoTime, 1000);
         updateVideoTime();
 
     } catch (error) {
+        elements.countdownOverlay.style.display = 'none';
+        elements.audioOptions.style.display = 'flex';
         console.error('Error al acceder a la cámara:', error);
         if (error.name === 'NotAllowedError') {
             showNotification('Permiso de cámara denegado', 'error');
@@ -563,6 +570,28 @@ function updateVideoTime() {
     const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
     const seconds = (elapsed % 60).toString().padStart(2, '0');
     elements.recVideoTime.textContent = `${minutes}:${seconds}`;
+}
+
+function runCountdown() {
+    return new Promise(resolve => {
+        elements.audioOptions.style.display = 'none';
+        elements.countdownOverlay.style.display = 'flex';
+
+        const showCount = (n) => {
+            elements.countdownNumber.textContent = n;
+            elements.countdownNumber.style.animation = 'none';
+            void elements.countdownNumber.offsetWidth; // reflow to restart animation
+            elements.countdownNumber.style.animation = 'countdown-pulse 1s ease-in-out';
+        };
+
+        showCount(3);
+        setTimeout(() => showCount(2), 1000);
+        setTimeout(() => showCount(1), 2000);
+        setTimeout(() => {
+            elements.countdownOverlay.style.display = 'none';
+            resolve();
+        }, 3000);
+    });
 }
 
 // ==========================================
@@ -782,8 +811,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         elements.stopBtn = document.getElementById('stopBtn');
         elements.recordingsList = document.getElementById('recordingsList');
         elements.recordVideoBtn = document.getElementById('recordVideoBtn');
+        elements.countdownOverlay = document.getElementById('countdownOverlay');
+        elements.countdownNumber = document.getElementById('countdownNumber');
         elements.videoRecorderActive = document.getElementById('videoRecorderActive');
         elements.webcamPreview = document.getElementById('webcamPreview');
+        elements.scoreThumbnail = document.getElementById('scoreThumbnail');
         elements.recVideoTime = document.getElementById('recVideoTime');
         elements.stopVideoBtn = document.getElementById('stopVideoBtn');
         elements.videosList = document.getElementById('videosList');
