@@ -1181,11 +1181,15 @@ function setupAnnotationCanvas() {
     };
 
     img.addEventListener('load', () => {
-        setTimeout(() => {
-            canvas.width = img.offsetWidth;
-            canvas.height = img.offsetHeight;
+        requestAnimationFrame(() => {
+            const w = img.offsetWidth || img.naturalWidth;
+            const h = img.offsetHeight || img.naturalHeight;
+            if (w > 0 && h > 0) {
+                canvas.width = w;
+                canvas.height = h;
+            }
             loadAnnotation(currentPasaje);
-        }, 60);
+        });
     });
 
     const getPos = (e) => {
