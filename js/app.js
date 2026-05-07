@@ -11,8 +11,10 @@ function initDB() {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
 
         request.onerror = () => reject(request.error);
+        request.onblocked = () => reject(new Error('IndexedDB bloqueada por otra pestaña'));
         request.onsuccess = () => {
             db = request.result;
+            db.onversionchange = () => { db.close(); db = null; };
             resolve(db);
         };
 
