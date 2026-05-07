@@ -33,7 +33,6 @@ function initDB() {
                 const videosStore = database.createObjectStore('videos', { keyPath: 'videoId' });
                 videosStore.createIndex('pasajeId', 'pasajeId', { unique: false });
             }
-        }
             if (!database.objectStoreNames.contains('tempoLog')) {
                 const tempoStore = database.createObjectStore('tempoLog', { keyPath: 'id', autoIncrement: true });
                 tempoStore.createIndex('pasajeId', 'pasajeId', { unique: false });
