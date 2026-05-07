@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;600&display=swap');
+
 /* Reset y variables */
 * {
     margin: 0;
@@ -24,11 +26,12 @@
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background-color: var(--bg-primary);
     color: var(--text-primary);
     line-height: 1.6;
     min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
 }
 
 .app-container {
@@ -51,34 +54,45 @@ body {
 }
 
 .sidebar-header {
-    padding: 1.5rem;
-    border-bottom: 1px solid var(--border-color);
+    padding: 1.5rem 1.5rem 1.25rem;
+    border-bottom: 2px solid var(--accent);
     background-color: var(--bg-tertiary);
 }
 
 .sidebar-header h1 {
-    font-size: 1.25rem;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.35rem;
     font-weight: 700;
-    margin-bottom: 0.1rem;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    margin-bottom: 0.3rem;
     color: var(--accent-light);
 }
 
 .composer {
-    font-size: 0.95rem;
-    font-weight: 500;
-    color: var(--text-primary);
-    margin-bottom: 0.1rem;
+    font-family: 'Playfair Display', serif;
+    font-size: 0.82rem;
+    font-weight: 400;
+    font-style: italic;
+    letter-spacing: 0.02em;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
 }
 
 .subtitle {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
     margin-bottom: 1rem;
 }
 
 /* Progress Bar */
 .progress-container {
     margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .progress-bar {
@@ -124,8 +138,10 @@ body {
     background-color: transparent;
     border: none;
     color: var(--text-primary);
-    font-size: 0.9rem;
-    font-weight: 500;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
     cursor: pointer;
     border-radius: var(--radius);
     transition: background-color 0.2s;
@@ -291,8 +307,11 @@ body {
 }
 
 .variation-title {
-    font-size: 1.4rem;
-    font-weight: 600;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.45rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
     margin-bottom: 0.2rem;
 }
 
@@ -377,14 +396,36 @@ body {
 .description-section h3,
 .recording-section h3,
 .notes-section h3,
-.score-photo-section h3 {
-    font-size: 1rem;
-    font-weight: 500;
-    color: var(--text-secondary);
-    margin-bottom: 1rem;
+.score-photo-section h3,
+.reference-section h3,
+.metronome-section h3 {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 1.1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.6rem;
+}
+
+.manuscript-section h3::before,
+.description-section h3::before,
+.recording-section h3::before,
+.notes-section h3::before,
+.score-photo-section h3::before,
+.reference-section h3::before,
+.metronome-section h3::before {
+    content: '';
+    display: inline-block;
+    width: 3px;
+    height: 0.75em;
+    background-color: var(--accent);
+    border-radius: 2px;
+    flex-shrink: 0;
 }
 
 /* Reference Recording */
@@ -396,12 +437,7 @@ body {
     border: 1px solid var(--border-color);
 }
 
-.reference-section h3 {
-    font-size: 1rem;
-    font-weight: 500;
-    color: var(--text-secondary);
-    margin-bottom: 1rem;
-}
+/* reference-section h3 — unified above */
 
 .yt-container {
     position: relative;
@@ -429,12 +465,7 @@ body {
     border: 1px solid var(--border-color);
 }
 
-.metronome-section h3 {
-    font-size: 1rem;
-    font-weight: 500;
-    color: var(--text-secondary);
-    margin-bottom: 1rem;
-}
+/* metronome-section h3 — unified above */
 
 .metronome-container {
     display: flex;
@@ -601,7 +632,8 @@ body {
 /* Description */
 #pasajeDescripcion {
     color: var(--text-secondary);
-    line-height: 1.85;
+    line-height: 1.9;
+    font-size: 0.95rem;
 }
 
 /* Recording */
@@ -1102,6 +1134,34 @@ body {
     border-color: #60a5fa;
 }
 
+/* Cuenta atrás */
+.countdown-overlay {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.92);
+    border: 1px solid rgba(220, 38, 38, 0.4);
+    border-radius: var(--radius);
+    padding: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.countdown-number {
+    font-size: 6rem;
+    font-weight: 800;
+    color: #fbbf24;
+    line-height: 1;
+    animation: countdown-pulse 1s ease-in-out;
+}
+
+@keyframes countdown-pulse {
+    0%   { transform: scale(1.4); opacity: 0.4; }
+    40%  { transform: scale(1);   opacity: 1; }
+    80%  { transform: scale(0.95); opacity: 1; }
+    100% { transform: scale(0.9); opacity: 0.6; }
+}
+
+/* Layout webcam + miniatura */
 .video-recorder-active {
     display: flex;
     flex-direction: column;
@@ -1113,14 +1173,43 @@ body {
     border-radius: var(--radius);
 }
 
+.video-recorder-layout {
+    display: flex;
+    gap: 0.75rem;
+    width: 100%;
+    align-items: flex-start;
+}
+
+.webcam-wrapper {
+    flex: 2;
+    min-width: 0;
+}
+
+.score-thumb-wrapper {
+    flex: 1;
+    min-width: 0;
+    background: #f8f4ec;
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+
 .webcam-preview {
     width: 100%;
-    max-width: 480px;
     border-radius: var(--radius);
     border: 2px solid rgba(220, 38, 38, 0.5);
     background: #000;
     aspect-ratio: 16/9;
     object-fit: cover;
+    display: block;
+}
+
+.score-thumbnail {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    opacity: 0.9;
 }
 
 .video-item {
