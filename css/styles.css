@@ -1399,3 +1399,76 @@ body {
 .annotation-canvas.eraser-mode {
     cursor: cell;
 }
+
+/* ==========================================
+   ANOTACIÓN FULLSCREEN
+   ========================================== */
+
+.anno-open-fs {
+    margin-left: auto;
+}
+
+.anno-fullscreen {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 600;
+    background: var(--bg-primary);
+    flex-direction: column;
+}
+
+.anno-fullscreen.open {
+    display: flex;
+}
+
+.anno-fs-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.anno-fs-body {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.5rem;
+}
+
+.anno-fs-img-wrap {
+    position: relative;
+    display: block;
+    width: 100%;
+    line-height: 0;
+}
+
+.anno-fs-img-wrap img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 4px;
+}
+
+.anno-fs-done {
+    margin-left: auto;
+    padding: 0.35rem 1rem;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    flex-shrink: 0;
+}
+
+.anno-fs-done:hover {
+    background: var(--accent-hover);
+}

@@ -841,6 +841,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         setupScoreFullscreen();
         setupMetronome();
         setupAnnotationCanvas();
+        setupFullscreenAnnotation();
         setupTempoSaveBtn();
         updateProgress();
 
@@ -1163,6 +1164,11 @@ let annoTool = 'pencil';
 let annoColor = '#dc2626';
 let annoDidDraw = false;
 let annoSaveTimer = null;
+let fsCtx = null;
+let fsDrawing = false;
+let fsTool = 'pencil';
+let fsColor = '#dc2626';
+let fsLx = 0, fsLy = 0;
 
 function setupAnnotationCanvas() {
     const canvas = document.getElementById('annotationCanvas');
@@ -1443,4 +1449,147 @@ function setupMetronome() {
             p.classList.toggle('active', parseInt(p.dataset.bpm) === metroBpm);
         });
     }
+}
+
+// ==========================================
+// ANOTACIÓN FULLSCREEN
+// ==========================================
+
+function openFsAnnotation() {
+    const mainImg = document.getElementById('manuscriptImg');
+    const mainCanvas = document.getElementById('annotationCanvas');
+    const fsEl = document.getElementById('annoFullscreen');
+    const fsImg = document.getElementById('annoFsImg');
+    const fsCanvas = document.getElementById('annoFsCanvas');
+    if (!mainImg || !mainImg.src || mainImg.src === window.location.href) return;
+
+    fsImg.src = mainImg.src;
+    fsEl.classList.add('open');
+    document.body.style.overflow = 'hidden';
+
+    const init = () => {
+        requestAnimationFrame(() => {
+            const w = fsImg.offsetWidth;
+            const h = fsImg.offsetHeight;
+            if (w > 0 && h > 0) {
+                fsCanvas.width = w;
+                fsCanvas.height = h;
+                fsCtx = fsCanvas.getContext('2d');
+                fsCtx.clearRect(0, 0, w, h);
+                if (mainCanvas.width > 0 && mainCanvas.height > 0) {
+                    fsCtx.drawImage(mainCanvas, 0, 0, w, h);
+                }
+            }
+        });
+    };
+
+    if (fsImg.complete && fsImg.naturalWidth > 0) {
+        init();
+    } else {
+        fsImg.addEventListener('load', init, { once: true });
+    }
+}
+
+function closeFsAnnotation() {
+    const fsEl = document.getElementById('annoFullscreen');
+    const fsCanvas = document.getElementById('annoFsCanvas');
+    const mainCanvas = document.getElementById('annotationCanvas');
+
+    if (fsCanvas.width > 0 && fsCanvas.height > 0 && mainCanvas.width > 0 && mainCanvas.height > 0) {
+        const mainCtx = mainCanvas.getContext('2d');
+        mainCtx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+        mainCtx.drawImage(fsCanvas, 0, 0, mainCanvas.width, mainCanvas.height);
+        saveAnnotation(currentPasaje);
+    }
+
+    fsEl.classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+function setupFullscreenAnnotation() {
+    const fsEl = document.getElementById('annoFullscreen');
+    const fsCanvas = document.getElementById('annoFsCanvas');
+    if (!fsEl || !fsCanvas) return;
+
+    document.getElementById('annoOpenFs')?.addEventListener('click', openFsAnnotation);
+    document.getElementById('annoFsDone')?.addEventListener('click', closeFsAnnotation);
+
+    document.getElementById('annoPencilFs')?.addEventListener('click', () => {
+        fsTool = 'pencil';
+        fsCanvas.classList.remove('eraser-mode');
+        document.getElementById('annoPencilFs').classList.add('active');
+        document.getElementById('annoEraserFs').classList.remove('active');
+    });
+    document.getElementById('annoEraserFs')?.addEventListener('click', () => {
+        fsTool = 'eraser';
+        fsCanvas.classList.add('eraser-mode');
+        document.getElementById('annoEraserFs').classList.add('active');
+        document.getElementById('annoPencilFs').classList.remove('active');
+    });
+    fsEl.querySelectorAll('.anno-color-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            fsColor = btn.dataset.color;
+            fsTool = 'pencil';
+            fsCanvas.classList.remove('eraser-mode');
+            document.getElementById('annoPencilFs').classList.add('active');
+            document.getElementById('annoEraserFs').classList.remove('active');
+            fsEl.querySelectorAll('.anno-color-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        });
+    });
+    document.getElementById('annoClearFs')?.addEventListener('click', () => {
+        if (fsCtx) fsCtx.clearRect(0, 0, fsCanvas.width, fsCanvas.height);
+    });
+
+    const getPos = (e) => {
+        const r = fsCanvas.getBoundingClientRect();
+        const sx = fsCanvas.width / r.width, sy = fsCanvas.height / r.height;
+        const src = e.touches ? e.touches[0] : e;
+        return { x: (src.clientX - r.left) * sx, y: (src.clientY - r.top) * sy };
+    };
+
+    fsCanvas.addEventListener('pointerdown', (e) => {
+        if (!fsCtx) return;
+        fsDrawing = true;
+        fsCanvas.setPointerCapture(e.pointerId);
+        const p = getPos(e);
+        fsLx = p.x; fsLy = p.y;
+        fsCtx.beginPath();
+        if (fsTool === 'eraser') {
+            fsCtx.globalCompositeOperation = 'destination-out';
+            fsCtx.arc(p.x, p.y, 14, 0, Math.PI * 2);
+            fsCtx.fillStyle = 'rgba(0,0,0,1)';
+        } else {
+            fsCtx.globalCompositeOperation = 'source-over';
+            fsCtx.arc(p.x, p.y, 1.5, 0, Math.PI * 2);
+            fsCtx.fillStyle = fsColor;
+        }
+        fsCtx.fill();
+        e.preventDefault();
+    });
+
+    fsCanvas.addEventListener('pointermove', (e) => {
+        if (!fsDrawing || !fsCtx) return;
+        const p = getPos(e);
+        fsCtx.beginPath();
+        fsCtx.moveTo(fsLx, fsLy);
+        fsCtx.lineTo(p.x, p.y);
+        if (fsTool === 'eraser') {
+            fsCtx.globalCompositeOperation = 'destination-out';
+            fsCtx.strokeStyle = 'rgba(0,0,0,1)';
+            fsCtx.lineWidth = 28;
+        } else {
+            fsCtx.globalCompositeOperation = 'source-over';
+            fsCtx.strokeStyle = fsColor;
+            fsCtx.lineWidth = 3;
+        }
+        fsCtx.lineCap = 'round';
+        fsCtx.lineJoin = 'round';
+        fsCtx.stroke();
+        fsLx = p.x; fsLy = p.y;
+        e.preventDefault();
+    });
+
+    fsCanvas.addEventListener('pointerup', () => { fsDrawing = false; });
+    fsCanvas.addEventListener('pointercancel', () => { fsDrawing = false; });
 }

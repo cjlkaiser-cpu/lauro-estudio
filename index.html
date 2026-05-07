@@ -160,6 +160,7 @@
                             <button class="anno-color-btn" data-color="#d97706" title="Naranja" style="background:#d97706"></button>
                         </div>
                         <button class="anno-clear-btn" id="annoClear" title="Borrar anotaciones">✕</button>
+                    <button class="anno-btn anno-open-fs" id="annoOpenFs" title="Pantalla completa">⛶</button>
                     </div>
                     <div class="manuscript-container">
                         <div class="score-annotation-wrapper">
@@ -258,6 +259,27 @@
         </main>
     </div>
 
+<!-- Fullscreen annotation overlay -->
+<div class="anno-fullscreen" id="annoFullscreen">
+    <div class="anno-fs-toolbar">
+        <button class="anno-btn active" id="annoPencilFs" title="Lápiz">✏</button>
+        <button class="anno-btn" id="annoEraserFs" title="Goma">◻</button>
+        <div class="anno-colors">
+            <button class="anno-color-btn active" data-color="#dc2626" title="Rojo" style="background:#dc2626"></button>
+            <button class="anno-color-btn" data-color="#1d4ed8" title="Azul" style="background:#1d4ed8"></button>
+            <button class="anno-color-btn" data-color="#15803d" title="Verde" style="background:#15803d"></button>
+            <button class="anno-color-btn" data-color="#d97706" title="Naranja" style="background:#d97706"></button>
+        </div>
+        <button class="anno-clear-btn" id="annoClearFs" title="Borrar anotaciones">✕</button>
+        <button class="anno-fs-done" id="annoFsDone">✓ Listo</button>
+    </div>
+    <div class="anno-fs-body">
+        <div class="anno-fs-img-wrap">
+            <img id="annoFsImg" src="" alt="Partitura">
+            <canvas id="annoFsCanvas" class="annotation-canvas"></canvas>
+        </div>
+    </div>
+</div>
     <script src="js/data.js?v=6"></script>
     <script src="js/app.js?v=10"></script>
 </body>
