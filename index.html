@@ -10,7 +10,7 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎸</text></svg>">
     <meta name="theme-color" content="#0f172a">
     <title>María Carolina · Antonio Lauro — Plan de Estudio</title>
-    <link rel="stylesheet" href="css/styles.css?v=2">
+    <link rel="stylesheet" href="css/styles.css?v=3">
 </head>
 <body>
     <div class="app-container">
@@ -140,14 +140,32 @@
                             <button class="metro-preset active" data-bpm="140">140 ♩</button>
                         </div>
                         <button class="metro-btn" id="metroBtn">▶ Iniciar</button>
+                        <div class="tempo-log-container">
+                            <button class="tempo-save-btn" id="tempoSaveBtn">Guardar sesión · <span id="tempoSaveBpmLabel">140</span> BPM</button>
+                            <div class="tempo-history" id="tempoHistory"></div>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Score Image -->
                 <div class="manuscript-section">
                     <h3>Partitura <span class="zoom-hint">— toca para ampliar</span></h3>
+                    <div class="annotation-toolbar" id="annotationToolbar">
+                        <button class="anno-btn active" id="annoPencil" title="Lápiz">✏</button>
+                        <button class="anno-btn" id="annoEraser" title="Goma">◻</button>
+                        <div class="anno-colors">
+                            <button class="anno-color-btn active" data-color="#dc2626" title="Rojo" style="background:#dc2626"></button>
+                            <button class="anno-color-btn" data-color="#1d4ed8" title="Azul" style="background:#1d4ed8"></button>
+                            <button class="anno-color-btn" data-color="#15803d" title="Verde" style="background:#15803d"></button>
+                            <button class="anno-color-btn" data-color="#d97706" title="Naranja" style="background:#d97706"></button>
+                        </div>
+                        <button class="anno-clear-btn" id="annoClear" title="Borrar anotaciones">✕</button>
+                    </div>
                     <div class="manuscript-container">
-                        <img id="manuscriptImg" src="" alt="Partitura" title="Toca para ampliar">
+                        <div class="score-annotation-wrapper">
+                            <img id="manuscriptImg" src="" alt="Partitura" title="Toca para ampliar">
+                            <canvas id="annotationCanvas" class="annotation-canvas"></canvas>
+                        </div>
                     </div>
                 </div>
 

@@ -3,7 +3,7 @@
 // ==========================================
 
 const DB_NAME = 'LauroStudyDB';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 let db = null;
 
 function initDB() {
@@ -32,6 +32,14 @@ function initDB() {
             if (!database.objectStoreNames.contains('videos')) {
                 const videosStore = database.createObjectStore('videos', { keyPath: 'videoId' });
                 videosStore.createIndex('pasajeId', 'pasajeId', { unique: false });
+            }
+        }
+            if (!database.objectStoreNames.contains('tempoLog')) {
+                const tempoStore = database.createObjectStore('tempoLog', { keyPath: 'id', autoIncrement: true });
+                tempoStore.createIndex('pasajeId', 'pasajeId', { unique: false });
+            }
+            if (!database.objectStoreNames.contains('annotations')) {
+                database.createObjectStore('annotations', { keyPath: 'id' });
             }
         };
     });
@@ -831,6 +839,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         setupMobileOverlay();
         setupScoreFullscreen();
         setupMetronome();
+        setupAnnotationCanvas();
+        setupTempoSaveBtn();
         updateProgress();
 
     } catch (error) {
@@ -941,6 +951,16 @@ async function loadPasaje(index) {
     elements.nextBtn.disabled = index === PASAJES.length - 1;
 
     expandSection(pasaje.seccion);
+
+    loadTempoHistory(index).then(renderTempoHistory).catch(() => {});
+
+    const canvas = document.getElementById('annotationCanvas');
+    const img = elements.manuscriptImg;
+    if (canvas && img.complete && img.naturalWidth > 0) {
+        canvas.width = img.offsetWidth || canvas.width;
+        canvas.height = img.offsetHeight || canvas.height;
+        loadAnnotation(index);
+    }
 }
 
 function expandSection(seccion) {
@@ -1089,6 +1109,213 @@ function setupMobileOverlay() {
 }
 
 // ==========================================
+// TEMPO LOG
+// ==========================================
+
+function saveTempoEntry(pasajeId, bpm) {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(['tempoLog'], 'readwrite');
+        tx.objectStore('tempoLog').add({ pasajeId, bpm, date: new Date().toISOString() });
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+    });
+}
+
+function loadTempoHistory(pasajeId) {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(['tempoLog'], 'readonly');
+        const req = tx.objectStore('tempoLog').index('pasajeId').getAll(pasajeId);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+    });
+}
+
+function renderTempoHistory(entries) {
+    const container = document.getElementById('tempoHistory');
+    if (!container || !entries || entries.length === 0) {
+        if (container) container.innerHTML = '';
+        return;
+    }
+    const recent = entries.slice(-10);
+    const maxBpm = Math.max(...recent.map(e => e.bpm));
+    const minBpm = Math.min(...recent.map(e => e.bpm));
+    const range = maxBpm - minBpm || 1;
+    const bars = recent.map((e, i) => {
+        const h = 16 + Math.round(((e.bpm - minBpm) / range) * 28);
+        const isLatest = i === recent.length - 1;
+        const d = new Date(e.date).toLocaleDateString('es', { month: 'short', day: 'numeric' });
+        return `<div class="tempo-bar-group" title="${d}: ${e.bpm} BPM">
+            <span class="tempo-bar-bpm">${e.bpm}</span>
+            <div class="tempo-bar${isLatest ? ' latest' : ''}" style="height:${h}px"></div>
+        </div>`;
+    }).join('');
+    container.innerHTML = `<div class="tempo-bars">${bars}</div>`;
+}
+
+// ==========================================
+// ANOTACIONES EN PARTITURA
+// ==========================================
+
+let annoCtx = null;
+let annoDrawing = false;
+let annoTool = 'pencil';
+let annoColor = '#dc2626';
+let annoDidDraw = false;
+let annoSaveTimer = null;
+
+function setupAnnotationCanvas() {
+    const canvas = document.getElementById('annotationCanvas');
+    const img = document.getElementById('manuscriptImg');
+    if (!canvas || !img) return;
+    annoCtx = canvas.getContext('2d');
+
+    const syncSize = () => {
+        if (!img.offsetWidth) return;
+        const prev = document.createElement('canvas');
+        prev.width = canvas.width; prev.height = canvas.height;
+        prev.getContext('2d').drawImage(canvas, 0, 0);
+        canvas.width = img.offsetWidth;
+        canvas.height = img.offsetHeight;
+        annoCtx.drawImage(prev, 0, 0, canvas.width, canvas.height);
+    };
+
+    img.addEventListener('load', () => {
+        setTimeout(() => {
+            canvas.width = img.offsetWidth;
+            canvas.height = img.offsetHeight;
+            loadAnnotation(currentPasaje);
+        }, 60);
+    });
+
+    const getPos = (e) => {
+        const r = canvas.getBoundingClientRect();
+        const sx = canvas.width / r.width, sy = canvas.height / r.height;
+        const cx = e.touches ? e.touches[0].clientX : e.clientX;
+        const cy = e.touches ? e.touches[0].clientY : e.clientY;
+        return { x: (cx - r.left) * sx, y: (cy - r.top) * sy };
+    };
+
+    let lx = 0, ly = 0, startX = 0, startY = 0;
+
+    canvas.addEventListener('pointerdown', (e) => {
+        annoDrawing = true; annoDidDraw = false;
+        startX = e.clientX; startY = e.clientY;
+        canvas.setPointerCapture(e.pointerId);
+        const p = getPos(e);
+        lx = p.x; ly = p.y;
+        annoCtx.beginPath();
+        if (annoTool === 'eraser') {
+            annoCtx.globalCompositeOperation = 'destination-out';
+            annoCtx.arc(p.x, p.y, 10, 0, Math.PI * 2);
+            annoCtx.fillStyle = 'rgba(0,0,0,1)';
+        } else {
+            annoCtx.globalCompositeOperation = 'source-over';
+            annoCtx.arc(p.x, p.y, 1.5, 0, Math.PI * 2);
+            annoCtx.fillStyle = annoColor;
+        }
+        annoCtx.fill();
+        e.preventDefault();
+    });
+
+    canvas.addEventListener('pointermove', (e) => {
+        if (!annoDrawing) return;
+        const dx = e.clientX - startX, dy = e.clientY - startY;
+        if (Math.sqrt(dx*dx + dy*dy) > 4) annoDidDraw = true;
+        const p = getPos(e);
+        annoCtx.beginPath();
+        annoCtx.moveTo(lx, ly);
+        annoCtx.lineTo(p.x, p.y);
+        if (annoTool === 'eraser') {
+            annoCtx.globalCompositeOperation = 'destination-out';
+            annoCtx.strokeStyle = 'rgba(0,0,0,1)';
+            annoCtx.lineWidth = 20;
+        } else {
+            annoCtx.globalCompositeOperation = 'source-over';
+            annoCtx.strokeStyle = annoColor;
+            annoCtx.lineWidth = 3;
+        }
+        annoCtx.lineCap = 'round';
+        annoCtx.lineJoin = 'round';
+        annoCtx.stroke();
+        lx = p.x; ly = p.y;
+        e.preventDefault();
+        clearTimeout(annoSaveTimer);
+        annoSaveTimer = setTimeout(() => saveAnnotation(currentPasaje), 800);
+    });
+
+    canvas.addEventListener('pointerup', (e) => {
+        annoDrawing = false;
+        if (!annoDidDraw) {
+            // Tap sin dibujo → abrir overlay
+            const overlayEl = document.getElementById('scoreOverlay');
+            const overlayImg = document.getElementById('scoreOverlayImg');
+            const mainImg = document.getElementById('manuscriptImg');
+            if (overlayEl && overlayImg && mainImg.src) {
+                overlayImg.src = mainImg.src;
+                overlayEl.classList.add('open');
+            }
+        } else {
+            clearTimeout(annoSaveTimer);
+            saveAnnotation(currentPasaje);
+        }
+    });
+
+    canvas.addEventListener('pointercancel', () => { annoDrawing = false; });
+
+    // Toolbar
+    document.getElementById('annoPencil')?.addEventListener('click', () => {
+        annoTool = 'pencil';
+        canvas.classList.remove('eraser-mode');
+        document.getElementById('annoPencil').classList.add('active');
+        document.getElementById('annoEraser').classList.remove('active');
+    });
+    document.getElementById('annoEraser')?.addEventListener('click', () => {
+        annoTool = 'eraser';
+        canvas.classList.add('eraser-mode');
+        document.getElementById('annoEraser').classList.add('active');
+        document.getElementById('annoPencil').classList.remove('active');
+    });
+    document.querySelectorAll('.anno-color-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            annoColor = btn.dataset.color;
+            annoTool = 'pencil';
+            canvas.classList.remove('eraser-mode');
+            document.getElementById('annoPencil').classList.add('active');
+            document.getElementById('annoEraser').classList.remove('active');
+            document.querySelectorAll('.anno-color-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        });
+    });
+    document.getElementById('annoClear')?.addEventListener('click', () => {
+        if (!annoCtx) return;
+        annoCtx.clearRect(0, 0, canvas.width, canvas.height);
+        saveAnnotation(currentPasaje);
+    });
+}
+
+function saveAnnotation(pasajeId) {
+    const canvas = document.getElementById('annotationCanvas');
+    if (!canvas || !db || canvas.width === 0) return;
+    const dataUrl = canvas.toDataURL('image/png');
+    const tx = db.transaction(['annotations'], 'readwrite');
+    tx.objectStore('annotations').put({ id: pasajeId, dataUrl });
+}
+
+function loadAnnotation(pasajeId) {
+    const canvas = document.getElementById('annotationCanvas');
+    if (!canvas || !annoCtx || !db) return;
+    annoCtx.clearRect(0, 0, canvas.width, canvas.height);
+    const tx = db.transaction(['annotations'], 'readonly');
+    const req = tx.objectStore('annotations').get(pasajeId);
+    req.onsuccess = () => {
+        if (!req.result) return;
+        const img = new Image();
+        img.onload = () => annoCtx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        img.src = req.result.dataUrl;
+    };
+}
+
+// ==========================================
 // FULLSCREEN SCORE
 // ==========================================
 
@@ -1121,6 +1348,16 @@ let metroInterval = null;
 let metroBpm = 140;
 let metroRunning = false;
 
+function setupTempoSaveBtn() {
+    document.getElementById('tempoSaveBtn')?.addEventListener('click', async () => {
+        const bpm = metroBpm;
+        await saveTempoEntry(currentPasaje, bpm);
+        const entries = await loadTempoHistory(currentPasaje);
+        renderTempoHistory(entries);
+        showNotification(`Sesión guardada · ${bpm} BPM`, 'success');
+    });
+}
+
 function setupMetronome() {
     const slider = document.getElementById('metroSlider');
     const bpmDisplay = document.getElementById('metroBpm');
@@ -1131,6 +1368,8 @@ function setupMetronome() {
     slider.addEventListener('input', () => {
         metroBpm = parseInt(slider.value);
         bpmDisplay.textContent = metroBpm;
+        const lbl = document.getElementById('tempoSaveBpmLabel');
+        if (lbl) lbl.textContent = metroBpm;
         updateActivePreset();
         if (metroRunning) restartMetronome();
     });
@@ -1140,6 +1379,8 @@ function setupMetronome() {
             metroBpm = parseInt(p.dataset.bpm);
             slider.value = metroBpm;
             bpmDisplay.textContent = metroBpm;
+            const lbl2 = document.getElementById('tempoSaveBpmLabel');
+            if (lbl2) lbl2.textContent = metroBpm;
             updateActivePreset();
             if (metroRunning) restartMetronome();
         });
