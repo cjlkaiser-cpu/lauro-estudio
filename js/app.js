@@ -526,7 +526,7 @@ async function startVideoRecording() {
         ];
         const mimeType = candidates.find(t => MediaRecorder.isTypeSupported(t)) || '';
 
-        videoRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
+        videoRecorder = new MediaRecorder(stream, mimeType ? { mimeType, videoBitsPerSecond: 500_000 } : { videoBitsPerSecond: 500_000 });
         videoChunks = [];
 
         videoRecorder.ondataavailable = (e) => {
