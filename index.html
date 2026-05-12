@@ -10,7 +10,7 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎸</text></svg>">
     <meta name="theme-color" content="#0f172a">
     <title>María Carolina · Antonio Lauro — Plan de Estudio</title>
-    <link rel="stylesheet" href="css/styles.css?v=7">
+    <link rel="stylesheet" href="css/styles.css?v=8">
 </head>
 <body>
     <div class="app-container">
@@ -220,6 +220,41 @@
                     </div>
                 </div>
 
+                <!-- Herramientas -->
+                <div class="tools-section">
+                    <div class="tools-toggle-row">
+                        <button class="tool-toggle-btn" id="tunerToggle">🎵 Afinador</button>
+                        <button class="tool-toggle-btn" id="mirrorToggle">📷 Espejo</button>
+                    </div>
+
+                    <div class="tuner-panel" id="tunerPanel" style="display:none">
+                        <div class="tuner-gauge-wrap">
+                            <span class="gauge-sign">♭</span>
+                            <div class="gauge-track">
+                                <div class="gauge-center-mark"></div>
+                                <div class="gauge-needle" id="gaugeNeedle"></div>
+                            </div>
+                            <span class="gauge-sign">♯</span>
+                        </div>
+                        <div class="tuner-note-display">
+                            <span class="tuner-note" id="tunerNote">—</span><span class="tuner-octave" id="tunerOctave"></span>
+                        </div>
+                        <div class="tuner-cents" id="tunerCents"></div>
+                        <div class="tuner-strings">
+                            <span class="string-ref" data-note="E2">E2</span>
+                            <span class="string-ref" data-note="A2">A2</span>
+                            <span class="string-ref" data-note="D3">D3</span>
+                            <span class="string-ref" data-note="G3">G3</span>
+                            <span class="string-ref" data-note="B3">B3</span>
+                            <span class="string-ref" data-note="E4">E4</span>
+                        </div>
+                    </div>
+
+                    <div class="mirror-panel" id="mirrorPanel" style="display:none">
+                        <video id="mirrorVideo" autoplay muted playsinline class="mirror-video"></video>
+                    </div>
+                </div>
+
                 <!-- Description -->
                 <div class="description-section">
                     <h3>Análisis</h3>
@@ -326,6 +361,6 @@
     </div>
 </div>
     <script src="js/data.js?v=7"></script>
-    <script src="js/app.js?v=14"></script>
+    <script src="js/app.js?v=15"></script>
 </body>
 </html>

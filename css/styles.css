@@ -839,6 +839,138 @@ body {
 .metro-preset:hover { border-color: var(--accent); color: var(--accent-light); }
 .metro-preset.active { background-color: rgba(217,119,6,0.15); border-color: var(--accent); color: var(--accent-light); }
 
+/* ── Herramientas (Afinador + Espejo) ── */
+.tools-section {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 0.9rem 1rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.tools-toggle-row { display: flex; gap: 0.5rem; }
+
+.tool-toggle-btn {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 0.35rem 0.9rem;
+    border-radius: var(--radius);
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.tool-toggle-btn:hover { border-color: var(--accent); color: var(--accent-light); }
+.tool-toggle-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+
+/* Afinador */
+.tuner-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0;
+}
+
+.tuner-gauge-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    max-width: 300px;
+}
+
+.gauge-sign { font-size: 1.1rem; color: var(--text-muted); flex-shrink: 0; }
+
+.gauge-track {
+    flex: 1;
+    height: 10px;
+    border-radius: 5px;
+    background: linear-gradient(to right, #ef4444, #eab308 30%, #22c55e 48%, #22c55e 52%, #eab308 70%, #ef4444);
+    position: relative;
+}
+
+.gauge-center-mark {
+    position: absolute;
+    top: -5px; left: 50%;
+    width: 2px; height: 20px;
+    background: var(--bg-tertiary);
+    transform: translateX(-50%);
+    pointer-events: none;
+}
+
+.gauge-needle {
+    position: absolute;
+    top: -7px; left: 50%;
+    width: 4px; height: 24px;
+    background: #fff;
+    border-radius: 2px;
+    transform: translateX(-50%);
+    transition: left 0.08s ease-out, background 0.08s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.6);
+}
+
+.tuner-note-display { display: flex; align-items: baseline; gap: 0.15rem; }
+
+.tuner-note {
+    font-size: 3.5rem;
+    font-weight: 700;
+    font-family: 'Playfair Display', serif;
+    color: var(--text-primary);
+    transition: color 0.1s;
+    line-height: 1;
+    min-width: 1.8ch;
+    text-align: center;
+}
+
+.tuner-octave {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    align-self: flex-start;
+    margin-top: 0.6rem;
+}
+
+.tuner-cents {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    height: 1.2em;
+    font-variant-numeric: tabular-nums;
+}
+
+.tuner-strings { display: flex; gap: 0.35rem; flex-wrap: wrap; justify-content: center; }
+
+.string-ref {
+    padding: 0.15rem 0.45rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border-color);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-family: monospace;
+    transition: all 0.15s;
+}
+.string-ref.active {
+    background: rgba(34,197,94,0.15);
+    border-color: #22c55e;
+    color: #4ade80;
+    font-weight: 700;
+}
+
+/* Espejo */
+.mirror-panel { display: flex; justify-content: center; }
+
+.mirror-video {
+    width: 100%;
+    max-width: 380px;
+    border-radius: var(--radius);
+    transform: scaleX(-1);
+    background: #000;
+    aspect-ratio: 4/3;
+    object-fit: cover;
+}
+
 /* Manuscript / Score */
 .manuscript-container {
     background-color: #f8f4ec;

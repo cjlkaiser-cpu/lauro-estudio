@@ -845,6 +845,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         setupMetroMoreBtn();
         setupTempoSaveBtn();
         setupRefVideoControls();
+        setupTools();
         updateProgress();
 
     } catch (error) {
@@ -1937,4 +1938,170 @@ function setupRefVideoControls() {
 
     // Inicializar pitch preservation desde ya
     setPlaybackRate(1.0);
+}
+
+// ==========================================
+// AFINADOR
+// ==========================================
+
+let tunerActive = false;
+let tunerStream = null;
+let tunerCtx = null;
+let tunerAnalyser = null;
+let tunerAnimFrame = null;
+let lastTunerTs = 0;
+
+const NOTE_NAMES_TUNER = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const GUITAR_STRINGS = { 'E2':82.41,'A2':110,'D3':146.83,'G3':196,'B3':246.94,'E4':329.63 };
+
+function freqToNote(freq) {
+    const semitones = 12 * Math.log2(freq / 440);
+    const rounded   = Math.round(semitones);
+    const cents     = Math.round((semitones - rounded) * 100);
+    const idx       = ((rounded % 12) + 12 + 9) % 12;
+    const octave    = Math.floor((rounded + 9) / 12) + 4;
+    return { name: NOTE_NAMES_TUNER[idx], octave, cents };
+}
+
+function detectPitchACF(buffer, sampleRate) {
+    let rms = 0;
+    for (let i = 0; i < buffer.length; i++) rms += buffer[i] * buffer[i];
+    if (Math.sqrt(rms / buffer.length) < 0.015) return -1; // silencio
+
+    const HALF    = Math.floor(buffer.length / 2);
+    const minOff  = Math.floor(sampleRate / 1400); // ~80Hz tope agudo guitarra
+    const maxOff  = Math.min(Math.ceil(sampleRate / 70), HALF);
+    let best = -1, bestC = 0, lastC = 1, found = false;
+
+    for (let off = minOff; off < maxOff; off++) {
+        let c = 0;
+        for (let i = 0; i < HALF; i++) c += Math.abs(buffer[i] - buffer[i + off]);
+        c = 1 - c / HALF;
+        if (c > 0.88 && c > lastC) {
+            found = true;
+            if (c > bestC) { bestC = c; best = off; }
+        } else if (found) {
+            return sampleRate / best;
+        }
+        lastC = c;
+    }
+    return best > 0 ? sampleRate / best : -1;
+}
+
+function tunerLoop(ts) {
+    if (!tunerActive) return;
+    tunerAnimFrame = requestAnimationFrame(tunerLoop);
+    if (ts - lastTunerTs < 80) return; // ~12 fps es suficiente
+    lastTunerTs = ts;
+
+    const buf = new Float32Array(tunerAnalyser.fftSize);
+    tunerAnalyser.getFloatTimeDomainData(buf);
+    const freq = detectPitchACF(buf, tunerCtx.sampleRate);
+
+    const noteEl   = document.getElementById('tunerNote');
+    const octaveEl = document.getElementById('tunerOctave');
+    const centsEl  = document.getElementById('tunerCents');
+    const needle   = document.getElementById('gaugeNeedle');
+
+    if (freq < 0) {
+        noteEl.textContent = '—'; octaveEl.textContent = '';
+        centsEl.textContent = ''; needle.style.left = '50%';
+        needle.style.background = '#fff';
+        document.querySelectorAll('.string-ref').forEach(e => e.classList.remove('active'));
+        return;
+    }
+
+    const { name, octave, cents } = freqToNote(freq);
+    const absCents = Math.abs(cents);
+    const color = absCents < 6 ? '#22c55e' : absCents < 18 ? '#eab308' : '#ef4444';
+
+    noteEl.textContent   = name;
+    noteEl.style.color   = color;
+    octaveEl.textContent = octave;
+    centsEl.textContent  = cents === 0 ? '✓ afinado' : `${cents > 0 ? '+' : ''}${cents} cents`;
+    needle.style.left       = `${Math.max(2, Math.min(98, 50 + cents))}%`;
+    needle.style.background = color;
+
+    // Cuerda más cercana
+    const noteOct = `${name}${octave}`;
+    let closest = null, minDist = Infinity;
+    for (const [k, f] of Object.entries(GUITAR_STRINGS)) {
+        const d = Math.abs(1200 * Math.log2(freq / f));
+        if (d < minDist) { minDist = d; closest = k; }
+    }
+    document.querySelectorAll('.string-ref').forEach(e =>
+        e.classList.toggle('active', e.dataset.note === closest && minDist < 100)
+    );
+}
+
+async function startTuner() {
+    try {
+        tunerStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        tunerCtx      = new (window.AudioContext || window.webkitAudioContext)();
+        tunerAnalyser = tunerCtx.createAnalyser();
+        tunerAnalyser.fftSize = 2048;
+        tunerCtx.createMediaStreamSource(tunerStream).connect(tunerAnalyser);
+        tunerActive = true;
+        requestAnimationFrame(tunerLoop);
+    } catch {
+        showNotification('Permiso de micrófono denegado', 'error');
+    }
+}
+
+function stopTuner() {
+    tunerActive = false;
+    cancelAnimationFrame(tunerAnimFrame);
+    tunerStream?.getTracks().forEach(t => t.stop());
+    tunerCtx?.close();
+    tunerCtx = tunerStream = tunerAnalyser = null;
+    document.getElementById('tunerNote').textContent  = '—';
+    document.getElementById('tunerOctave').textContent = '';
+    document.getElementById('tunerCents').textContent  = '';
+    document.getElementById('gaugeNeedle').style.left  = '50%';
+    document.getElementById('gaugeNeedle').style.background = '#fff';
+    document.querySelectorAll('.string-ref').forEach(e => e.classList.remove('active'));
+}
+
+// ==========================================
+// ESPEJO DE CÁMARA
+// ==========================================
+
+let mirrorStream = null;
+
+async function startMirror() {
+    try {
+        mirrorStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+        document.getElementById('mirrorVideo').srcObject = mirrorStream;
+    } catch {
+        showNotification('Permiso de cámara denegado', 'error');
+    }
+}
+
+function stopMirror() {
+    mirrorStream?.getTracks().forEach(t => t.stop());
+    mirrorStream = null;
+    document.getElementById('mirrorVideo').srcObject = null;
+}
+
+// ==========================================
+// SETUP HERRAMIENTAS
+// ==========================================
+
+function setupTools() {
+    const tunerBtn = document.getElementById('tunerToggle');
+    const mirrorBtn = document.getElementById('mirrorToggle');
+    const tunerPanel = document.getElementById('tunerPanel');
+    const mirrorPanel = document.getElementById('mirrorPanel');
+
+    tunerBtn.addEventListener('click', () => {
+        const on = tunerBtn.classList.toggle('active');
+        tunerPanel.style.display = on ? 'flex' : 'none';
+        if (on) startTuner(); else stopTuner();
+    });
+
+    mirrorBtn.addEventListener('click', () => {
+        const on = mirrorBtn.classList.toggle('active');
+        mirrorPanel.style.display = on ? 'flex' : 'none';
+        if (on) startMirror(); else stopMirror();
+    });
 }
