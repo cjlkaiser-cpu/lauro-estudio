@@ -843,6 +843,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         setupAnnotationCanvas();
         setupFullscreenAnnotation();
         setupTempoSaveBtn();
+        setupRefVideoControls();
         updateProgress();
 
     } catch (error) {
@@ -963,6 +964,17 @@ async function loadPasaje(index) {
         canvas.height = img.offsetHeight || canvas.height;
         loadAnnotation(index);
     }
+
+    if (loopActive) {
+        loopActive = false;
+        const loopBtn = document.getElementById('loopBtn');
+        if (loopBtn) { loopBtn.classList.remove('active'); loopBtn.textContent = '↩ Loop'; }
+    }
+    pointA = pasaje.startTime ?? 0;
+    pointB = PASAJES[index + 1]?.startTime ?? null;
+    seekRefVideo(pointA);
+    updateTimeSetHint(pointA);
+    updateABTimeline();
 }
 
 function expandSection(seccion) {
@@ -1592,4 +1604,326 @@ function setupFullscreenAnnotation() {
 
     fsCanvas.addEventListener('pointerup', () => { fsDrawing = false; });
     fsCanvas.addEventListener('pointercancel', () => { fsDrawing = false; });
+}
+
+// ==========================================
+// VÍDEO DE REFERENCIA LOCAL
+// ==========================================
+
+let pointA = 0;
+let pointB = null;
+let loopActive = false;
+let currentRate = 1.0;
+let baseBpm = 140;
+let tapTimes = [];
+let tapResetTimer = null;
+let audioCtx = null;
+let analyserNode = null;
+let videoSourceNode = null;
+let prevFreqData = null;
+
+function formatTime(s) {
+    const m = Math.floor(s / 60).toString().padStart(2, '0');
+    const sec = Math.floor(s % 60).toString().padStart(2, '0');
+    return `${m}:${sec}`;
+}
+
+function seekRefVideo(seconds) {
+    const video = document.getElementById('refVideo');
+    if (!video) return;
+    if (video.readyState >= 1) {
+        video.currentTime = seconds;
+    } else {
+        video.addEventListener('loadedmetadata', () => { video.currentTime = seconds; }, { once: true });
+    }
+}
+
+function updateTimeSetHint(seconds) {
+    const hint = document.getElementById('timeSetHint');
+    if (hint) hint.textContent = `Inicio: ${formatTime(seconds)}`;
+}
+
+function updateABTimeline() {
+    const video = document.getElementById('refVideo');
+    if (!video || !video.duration) return;
+    const dur = video.duration;
+    const aPct = (pointA / dur) * 100;
+    const bPct = ((pointB ?? dur) / dur) * 100;
+    document.getElementById('handleA').style.left = aPct + '%';
+    document.getElementById('handleB').style.left = bPct + '%';
+    const region = document.getElementById('abRegion');
+    region.style.left = aPct + '%';
+    region.style.width = (bPct - aPct) + '%';
+}
+
+// ── Velocidad + Pitch ─────────────────────────────────────────
+
+function setPlaybackRate(rate) {
+    const video = document.getElementById('refVideo');
+    if (!video) return;
+    currentRate = Math.max(0.5, Math.min(1.3, Math.round(rate * 100) / 100));
+    video.playbackRate = currentRate;
+    // Pitch preservation — todos los navegadores modernos
+    if ('preservesPitch' in video)       video.preservesPitch = true;
+    if ('mozPreservesPitch' in video)    video.mozPreservesPitch = true;
+    if ('webkitPreservesPitch' in video) video.webkitPreservesPitch = true;
+    updateSpeedUI();
+}
+
+function updateSpeedUI() {
+    const pct = Math.round(currentRate * 100);
+    const bpm = Math.round(baseBpm * currentRate);
+    const readout = document.getElementById('speedReadout');
+    if (readout) readout.textContent = `${pct}% · ${bpm} BPM`;
+    const slider = document.getElementById('speedSlider');
+    if (slider) slider.value = pct;
+    document.querySelectorAll('.speed-preset').forEach(btn =>
+        btn.classList.toggle('active', parseInt(btn.dataset.pct) === pct)
+    );
+}
+
+function updateBpmBase(bpm) {
+    baseBpm = bpm;
+    const label = document.getElementById('bpmBaseLabel');
+    if (label) label.textContent = `Base: ${bpm} BPM`;
+    updateSpeedUI();
+}
+
+// ── Tap Tempo ─────────────────────────────────────────────────
+
+function handleTap() {
+    const now = Date.now();
+    tapTimes.push(now);
+    if (tapTimes.length > 8) tapTimes.shift();
+    clearTimeout(tapResetTimer);
+    tapResetTimer = setTimeout(() => { tapTimes = []; }, 2500);
+
+    if (tapTimes.length < 2) {
+        showNotification('Sigue tocando el ritmo…', 'info');
+        return;
+    }
+    let sum = 0;
+    for (let i = 1; i < tapTimes.length; i++) sum += tapTimes[i] - tapTimes[i - 1];
+    updateBpmBase(Math.round(60000 / (sum / (tapTimes.length - 1))));
+    showNotification(`Base: ${baseBpm} BPM`, 'success');
+}
+
+// ── BPM Detector (Web Audio API spectral flux) ────────────────
+
+function connectAudioCtx() {
+    if (audioCtx) return;
+    const video = document.getElementById('refVideo');
+    if (!video) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    videoSourceNode = audioCtx.createMediaElementSource(video);
+    analyserNode = audioCtx.createAnalyser();
+    analyserNode.fftSize = 512;
+    videoSourceNode.connect(analyserNode);
+    analyserNode.connect(audioCtx.destination);
+    prevFreqData = new Uint8Array(analyserNode.frequencyBinCount);
+}
+
+function detectBPM() {
+    const video = document.getElementById('refVideo');
+    const btn = document.getElementById('detectBtn');
+    if (!video || video.paused) {
+        showNotification('Reproduce el vídeo primero', 'info');
+        return;
+    }
+    try { connectAudioCtx(); } catch (e) {
+        showNotification('Error al acceder al audio', 'error');
+        return;
+    }
+    if (!analyserNode) return;
+
+    btn.textContent = '⟳ …';
+    btn.disabled = true;
+
+    const DURATION = 7000; // ms de análisis
+    const samples = [];
+    const freqData = new Uint8Array(analyserNode.frequencyBinCount);
+    const startTime = performance.now();
+
+    function collect() {
+        analyserNode.getByteFrequencyData(freqData);
+        let flux = 0;
+        for (let i = 0; i < freqData.length; i++)
+            flux += Math.max(0, freqData[i] - prevFreqData[i]);
+        samples.push({ flux, t: performance.now() - startTime });
+        prevFreqData.set(freqData);
+
+        if (performance.now() - startTime < DURATION) {
+            requestAnimationFrame(collect);
+        } else {
+            const bpm = bpmFromFlux(samples);
+            btn.textContent = '⟳ Detectar';
+            btn.disabled = false;
+            if (bpm) {
+                updateBpmBase(bpm);
+                showNotification(`BPM detectado: ~${bpm}`, 'success');
+            } else {
+                showNotification('No se pudo detectar — usa Tap BPM', 'info');
+            }
+        }
+    }
+    requestAnimationFrame(collect);
+}
+
+function bpmFromFlux(samples) {
+    if (samples.length < 20) return null;
+    const vals = samples.map(s => s.flux);
+    const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+    const std = Math.sqrt(vals.reduce((a, b) => a + (b - mean) ** 2, 0) / vals.length);
+    const threshold = mean + 0.4 * std;
+
+    // Onsets: picos locales por encima del umbral
+    const onsets = [];
+    for (let i = 2; i < samples.length - 2; i++) {
+        if (samples[i].flux > threshold &&
+            samples[i].flux >= samples[i - 1].flux &&
+            samples[i].flux >= samples[i + 1].flux) {
+            if (!onsets.length || samples[i].t - onsets.at(-1) > 80)
+                onsets.push(samples[i].t);
+        }
+    }
+    if (onsets.length < 4) return null;
+
+    const intervals = [];
+    for (let i = 1; i < onsets.length; i++) intervals.push(onsets[i] - onsets[i - 1]);
+    intervals.sort((a, b) => a - b);
+    const median = intervals[Math.floor(intervals.length / 2)];
+
+    // Ajuste a subdivisión musical plausible (40–200 BPM)
+    for (const mul of [1, 2, 0.5, 1.5, 2 / 3]) {
+        const bpm = Math.round(60000 / median * mul);
+        if (bpm >= 50 && bpm <= 200) return bpm;
+    }
+    return null;
+}
+
+// ── Setup principal ───────────────────────────────────────────
+
+function setupRefVideoControls() {
+    const video = document.getElementById('refVideo');
+    const timeline = document.getElementById('abTimeline');
+    if (!video || !timeline) return;
+
+    // Fallback a YouTube si el archivo local no está disponible
+    video.addEventListener('error', () => {
+        document.getElementById('localVideoWrap').style.display = 'none';
+        document.getElementById('ytFallback').style.display = 'block';
+        document.querySelector('.speed-panel').style.display = 'none';
+        document.getElementById('abTimeline').style.display = 'none';
+    }, { once: true });
+
+    video.addEventListener('loadedmetadata', () => {
+        if (pointB === null) pointB = video.duration;
+        updateABTimeline();
+    });
+
+    video.addEventListener('timeupdate', () => {
+        if (!video.duration) return;
+        const pct = (video.currentTime / video.duration) * 100;
+        const cursor = document.getElementById('abCursor');
+        if (cursor) cursor.style.left = pct + '%';
+        if (loopActive && video.currentTime >= (pointB ?? video.duration))
+            video.currentTime = pointA;
+    });
+
+    // Drag A/B
+    let dragging = null;
+    const timeFromEvent = e => {
+        const r = timeline.getBoundingClientRect();
+        return Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * video.duration;
+    };
+    const onDrag = e => {
+        if (!dragging || !video.duration) return;
+        const t = timeFromEvent(e);
+        if (dragging === 'a') {
+            pointA = Math.max(0, Math.min(t, (pointB ?? video.duration) - 0.5));
+            video.currentTime = pointA;
+        } else {
+            pointB = Math.min(video.duration, Math.max(t, pointA + 0.5));
+            video.currentTime = pointB;
+        }
+        updateABTimeline();
+    };
+    const stopDrag = () => {
+        dragging = null;
+        document.removeEventListener('pointermove', onDrag);
+        document.removeEventListener('pointerup', stopDrag);
+    };
+    ['handleA', 'handleB'].forEach(id => {
+        document.getElementById(id).addEventListener('pointerdown', e => {
+            e.stopPropagation();
+            dragging = id === 'handleA' ? 'a' : 'b';
+            document.getElementById(id).setPointerCapture(e.pointerId);
+            document.addEventListener('pointermove', onDrag);
+            document.addEventListener('pointerup', stopDrag);
+            e.preventDefault();
+        });
+    });
+    timeline.addEventListener('pointerdown', e => {
+        if (dragging || !video.duration) return;
+        video.currentTime = timeFromEvent(e);
+    });
+
+    // Botones A / B
+    document.getElementById('setABtn')?.addEventListener('click', () => {
+        pointA = video.currentTime;
+        if ((pointB ?? video.duration) <= pointA) pointB = Math.min(video.duration, pointA + 5);
+        updateABTimeline();
+        showNotification(`A → ${formatTime(pointA)}`, 'success');
+    });
+    document.getElementById('setBBtn')?.addEventListener('click', () => {
+        pointB = video.currentTime;
+        if (pointB <= pointA) pointA = Math.max(0, pointB - 5);
+        updateABTimeline();
+        showNotification(`B → ${formatTime(pointB)}`, 'success');
+    });
+
+    // Loop
+    const loopBtn = document.getElementById('loopBtn');
+    loopBtn?.addEventListener('click', () => {
+        loopActive = !loopActive;
+        loopBtn.classList.toggle('active', loopActive);
+        loopBtn.textContent = loopActive ? '↩ Loop ON' : '↩ Loop';
+        if (loopActive) { video.currentTime = pointA; if (video.paused) video.play(); }
+    });
+
+    // Velocidad — slider
+    document.getElementById('speedSlider')?.addEventListener('input', e => {
+        setPlaybackRate(parseInt(e.target.value) / 100);
+    });
+
+    // Velocidad — pasos
+    document.querySelectorAll('.speed-step').forEach(btn => {
+        btn.addEventListener('click', () =>
+            setPlaybackRate(currentRate + parseInt(btn.dataset.delta) / 100)
+        );
+    });
+
+    // Velocidad — presets
+    document.querySelectorAll('.speed-preset').forEach(btn => {
+        btn.addEventListener('click', () =>
+            setPlaybackRate(parseInt(btn.dataset.pct) / 100)
+        );
+    });
+
+    // Tap BPM
+    document.getElementById('tapBtn')?.addEventListener('click', handleTap);
+
+    // Detectar BPM
+    document.getElementById('detectBtn')?.addEventListener('click', detectBPM);
+
+    // Fijar inicio de sección
+    document.getElementById('setTimeBtn')?.addEventListener('click', () => {
+        const t = Math.floor(video.currentTime);
+        PASAJES[currentPasaje].startTime = t;
+        updateTimeSetHint(t);
+        showNotification(`Inicio → ${formatTime(t)}`, 'success');
+    });
+
+    // Inicializar pitch preservation desde ya
+    setPlaybackRate(1.0);
 }

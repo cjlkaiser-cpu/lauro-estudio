@@ -456,6 +456,268 @@ body {
     border-radius: var(--radius);
 }
 
+.local-video-container {
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: #000;
+}
+
+.local-video-container video {
+    width: 100%;
+    display: block;
+    border-radius: var(--radius);
+    max-height: 420px;
+}
+
+.ref-performer {
+    font-size: 0.8em;
+    font-weight: 400;
+    color: var(--text-secondary);
+    font-family: 'Inter', sans-serif;
+}
+
+/* ── AB Timeline ── */
+.ab-timeline {
+    position: relative;
+    height: 8px;
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    margin-top: 0.9rem;
+    cursor: pointer;
+    overflow: visible;
+    user-select: none;
+}
+
+.ab-region {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    background: rgba(34, 197, 94, 0.25);
+    border-left: 2px solid #22c55e;
+    border-right: 2px solid #f97316;
+    pointer-events: none;
+    border-radius: 2px;
+}
+
+.ab-cursor {
+    position: absolute;
+    top: 50%;
+    width: 2px;
+    height: 18px;
+    background: #f1f5f9;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    border-radius: 1px;
+}
+
+.ab-handle {
+    position: absolute;
+    top: 50%;
+    width: 14px;
+    height: 26px;
+    transform: translate(-50%, -50%);
+    border-radius: 4px;
+    cursor: ew-resize;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    touch-action: none;
+}
+
+.ab-handle-a { background: #22c55e; }
+.ab-handle-b { background: #f97316; }
+
+.ab-label {
+    font-size: 0.58rem;
+    font-weight: 700;
+    color: #fff;
+    pointer-events: none;
+}
+
+.ab-set-btn {
+    border: none;
+    padding: 0.25rem 0.6rem;
+    border-radius: var(--radius);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+
+.ab-set-a { background: #22c55e; color: #fff; }
+.ab-set-a:hover { opacity: 0.85; }
+.ab-set-b { background: #f97316; color: #fff; }
+.ab-set-b:hover { opacity: 0.85; }
+
+/* ── Barra de controles AB/Loop ── */
+.video-controls-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 0.75rem;
+}
+
+.loop-btn {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 0.25rem 0.7rem;
+    border-radius: var(--radius);
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.loop-btn:hover { border-color: var(--accent-green); color: var(--accent-green-light); }
+.loop-btn.active { background: var(--accent-green); border-color: var(--accent-green); color: #fff; font-weight: 600; }
+
+.time-set-controls { display: flex; align-items: center; gap: 0.5rem; margin-left: auto; }
+
+.time-set-btn {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+    padding: 0.25rem 0.65rem;
+    border-radius: var(--radius);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.time-set-btn:hover { border-color: var(--accent); color: var(--accent-light); }
+.time-set-hint { font-size: 0.72rem; color: var(--text-muted); }
+
+/* ── Panel de velocidad / BPM ── */
+.speed-panel {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 0.85rem 1rem;
+    margin-top: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.speed-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.speed-title {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.pitch-badge {
+    font-size: 0.7rem;
+    background: rgba(34,197,94,0.15);
+    color: var(--accent-green-light);
+    border: 1px solid rgba(34,197,94,0.3);
+    padding: 0.1rem 0.5rem;
+    border-radius: 99px;
+}
+
+.speed-readout {
+    margin-left: auto;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--accent-light);
+    font-variant-numeric: tabular-nums;
+}
+
+.speed-slider-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.speed-step {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--radius);
+    font-size: 0.75rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+    font-variant-numeric: tabular-nums;
+}
+.speed-step:hover { border-color: var(--accent); color: var(--accent-light); }
+
+#speedSlider {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--border-color);
+    outline: none;
+    cursor: pointer;
+}
+#speedSlider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: grab;
+    transition: transform 0.1s;
+}
+#speedSlider::-webkit-slider-thumb:active { transform: scale(1.2); }
+#speedSlider::-moz-range-thumb {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: none;
+    cursor: grab;
+}
+
+.speed-bottom-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.speed-preset {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--radius);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.speed-preset:hover { border-color: var(--accent); color: var(--accent-light); }
+.speed-preset.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+
+.speed-sep { flex: 1; }
+
+.tap-btn, .detect-btn {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 0.2rem 0.6rem;
+    border-radius: var(--radius);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.tap-btn:hover { border-color: var(--accent-light); color: var(--accent-light); }
+.detect-btn:hover { border-color: #818cf8; color: #a5b4fc; }
+.detect-btn:disabled { opacity: 0.5; cursor: default; }
+
+.bpm-base-label {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
 /* Metronome */
 .metronome-section {
     background-color: var(--bg-secondary);

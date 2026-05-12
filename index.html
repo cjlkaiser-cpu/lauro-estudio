@@ -10,7 +10,7 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎸</text></svg>">
     <meta name="theme-color" content="#0f172a">
     <title>María Carolina · Antonio Lauro — Plan de Estudio</title>
-    <link rel="stylesheet" href="css/styles.css?v=3">
+    <link rel="stylesheet" href="css/styles.css?v=6">
 </head>
 <body>
     <div class="app-container">
@@ -109,15 +109,59 @@
 
                 <!-- Reference Recording -->
                 <div class="reference-section">
-                    <h3>Grabación de referencia</h3>
-                    <div class="yt-container">
-                        <iframe
-                            src="https://www.youtube.com/embed/wDSM9T9VOzQ"
-                            title="María Carolina — Antonio Lauro"
-                            frameborder="0"
+                    <h3>Grabación de referencia <span class="ref-performer">— Lucija Iglič</span></h3>
+                    <div class="local-video-container" id="localVideoWrap">
+                        <video id="refVideo" controls preload="metadata">
+                            <source src="media/maria-carolina.mp4" type="video/mp4">
+                        </video>
+                    </div>
+                    <div class="yt-container" id="ytFallback" style="display:none">
+                        <iframe src="https://www.youtube.com/embed/wDSM9T9VOzQ"
+                            title="María Carolina — Antonio Lauro" frameborder="0"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowfullscreen>
-                        </iframe>
+                            allowfullscreen></iframe>
+                    </div>
+                    <div class="ab-timeline" id="abTimeline">
+                        <div class="ab-region" id="abRegion"></div>
+                        <div class="ab-cursor" id="abCursor"></div>
+                        <div class="ab-handle ab-handle-a" id="handleA"><span class="ab-label">A</span></div>
+                        <div class="ab-handle ab-handle-b" id="handleB"><span class="ab-label">B</span></div>
+                    </div>
+                    <div class="video-controls-bar">
+                        <button class="ab-set-btn ab-set-a" id="setABtn" title="Marcar A en posición actual">◀ A</button>
+                        <button class="ab-set-btn ab-set-b" id="setBBtn" title="Marcar B en posición actual">B ▶</button>
+                        <button class="loop-btn" id="loopBtn">↩ Loop</button>
+                        <div class="time-set-controls">
+                            <button class="time-set-btn" id="setTimeBtn" title="Fijar como inicio de sección">⏱ Fijar inicio</button>
+                            <span class="time-set-hint" id="timeSetHint"></span>
+                        </div>
+                    </div>
+
+                    <!-- Panel de velocidad / BPM -->
+                    <div class="speed-panel">
+                        <div class="speed-header">
+                            <span class="speed-title">Velocidad</span>
+                            <span class="pitch-badge">♩ Tono conservado</span>
+                            <span class="speed-readout" id="speedReadout">100% · 140 BPM</span>
+                        </div>
+                        <div class="speed-slider-row">
+                            <button class="speed-step" data-delta="-5">−5%</button>
+                            <button class="speed-step" data-delta="-1">−1%</button>
+                            <input type="range" id="speedSlider" min="50" max="130" step="1" value="100">
+                            <button class="speed-step" data-delta="1">+1%</button>
+                            <button class="speed-step" data-delta="5">+5%</button>
+                        </div>
+                        <div class="speed-bottom-row">
+                            <button class="speed-preset" data-pct="50">50%</button>
+                            <button class="speed-preset" data-pct="60">60%</button>
+                            <button class="speed-preset" data-pct="75">75%</button>
+                            <button class="speed-preset" data-pct="90">90%</button>
+                            <button class="speed-preset active" data-pct="100">100%</button>
+                            <span class="speed-sep"></span>
+                            <button class="tap-btn" id="tapBtn">♩ Tap</button>
+                            <button class="detect-btn" id="detectBtn">⟳ Detectar</button>
+                            <span class="bpm-base-label" id="bpmBaseLabel">Base: 140 BPM</span>
+                        </div>
                     </div>
                 </div>
 
@@ -280,7 +324,7 @@
         </div>
     </div>
 </div>
-    <script src="js/data.js?v=6"></script>
-    <script src="js/app.js?v=10"></script>
+    <script src="js/data.js?v=7"></script>
+    <script src="js/app.js?v=13"></script>
 </body>
 </html>

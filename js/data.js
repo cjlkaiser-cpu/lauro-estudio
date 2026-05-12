@@ -11,7 +11,8 @@ const PASAJES = [
         compases: "1–18",
         imagen: "img/pagina_1.png",
         texto: "",
-        seccion: "seccion-a"
+        seccion: "seccion-a",
+        startTime: 0
     },
 
     // ── SECCIÓN B · La mayor ─────────────────────────────────────────────────
@@ -21,7 +22,8 @@ const PASAJES = [
         compases: "19–34",
         imagen: "img/pagina_2.png",
         texto: "",
-        seccion: "seccion-b"
+        seccion: "seccion-b",
+        startTime: 23
     },
 
     // ── SECCIÓN A · La menor ─────────────────────────────────────────────────
@@ -31,7 +33,8 @@ const PASAJES = [
         compases: "35–50",
         imagen: "img/pagina_2.png",
         texto: "",
-        seccion: "seccion-a"
+        seccion: "seccion-a",
+        startTime: 44
     },
 
     // ── SECCIÓN C ────────────────────────────────────────────────────────────
@@ -41,7 +44,8 @@ const PASAJES = [
         compases: "51–72",
         imagen: "img/pagina_3.png",
         texto: "",
-        seccion: "seccion-c"
+        seccion: "seccion-c",
+        startTime: 64
     },
 
     // ── SECCIÓN A · La menor ─────────────────────────────────────────────────
@@ -51,7 +55,8 @@ const PASAJES = [
         compases: "73–89",
         imagen: "img/pagina_4.png",
         texto: "",
-        seccion: "seccion-a"
+        seccion: "seccion-a",
+        startTime: 92
     },
 
     // ── CODA · La mayor ──────────────────────────────────────────────────────
@@ -61,6 +66,7 @@ const PASAJES = [
         compases: "90–104",
         imagen: "img/pagina_4.png",
         texto: "",
-        seccion: "seccion-coda"
+        seccion: "seccion-coda",
+        startTime: 114
     }
 ];
