@@ -590,6 +590,23 @@ function updateVideoTime() {
 // LISTA DE VÍDEOS
 // ==========================================
 
+function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function safeFilename(name) {
+    const section = PASAJES[currentPasaje]?.titulo ?? 'seccion';
+    return `maria-carolina_${section}_${name}`
+        .toLowerCase()
+        .replace(/[^a-z0-9_\-]/g, '_')
+        .replace(/_+/g, '_');
+}
+
 async function renderVideosList(pasajeId) {
     const videos = await getVideosForPasaje(pasajeId);
     const container = elements.videosList;
@@ -613,6 +630,7 @@ async function renderVideosList(pasajeId) {
                 </div>
                 <div class="recording-actions">
                     <button class="play-btn play-video-btn" data-video-id="${rec.videoId}" title="Reproducir">▶</button>
+                    <button class="download-btn download-video-btn" data-video-id="${rec.videoId}" title="Descargar">⬇</button>
                     <button class="delete-recording-btn delete-video-btn" data-video-id="${rec.videoId}" title="Eliminar">✕</button>
                 </div>
             </div>
@@ -625,6 +643,13 @@ async function renderVideosList(pasajeId) {
     container.querySelectorAll('.play-video-btn').forEach(btn => {
         btn.addEventListener('click', async (e) => {
             await playVideo(e.currentTarget.dataset.videoId, e.currentTarget);
+        });
+    });
+
+    container.querySelectorAll('.download-video-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const rec = videos.find(v => v.videoId === e.currentTarget.dataset.videoId);
+            if (rec) downloadBlob(rec.video, `${safeFilename(rec.name)}.webm`);
         });
     });
 
@@ -696,6 +721,7 @@ async function renderRecordingsList(pasajeId) {
                 </div>
                 <div class="recording-actions">
                     <button class="play-btn" data-recording-id="${rec.recordingId}" title="Reproducir">▶</button>
+                    <button class="download-btn download-audio-btn" data-recording-id="${rec.recordingId}" title="Descargar">⬇</button>
                     <button class="delete-recording-btn" data-recording-id="${rec.recordingId}" title="Eliminar">✕</button>
                 </div>
             </div>
@@ -705,6 +731,13 @@ async function renderRecordingsList(pasajeId) {
     container.querySelectorAll('.play-btn').forEach(btn => {
         btn.addEventListener('click', async (e) => {
             await playRecording(e.currentTarget.dataset.recordingId, e.currentTarget);
+        });
+    });
+
+    container.querySelectorAll('.download-audio-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const rec = recordings.find(r => r.recordingId === e.currentTarget.dataset.recordingId);
+            if (rec) downloadBlob(rec.audio, `${safeFilename(rec.name)}.webm`);
         });
     });
 

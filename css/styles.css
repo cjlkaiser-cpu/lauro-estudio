@@ -1332,7 +1332,7 @@ body {
     gap: 0.5rem;
 }
 
-.play-btn, .delete-recording-btn {
+.play-btn, .delete-recording-btn, .download-btn {
     width: 36px;
     height: 36px;
     border-radius: 50%;
@@ -1362,6 +1362,12 @@ body {
 .delete-recording-btn:hover {
     background-color: #ef4444;
     border-color: #ef4444;
+    color: white;
+}
+
+.download-btn:hover {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
     color: white;
 }
 
