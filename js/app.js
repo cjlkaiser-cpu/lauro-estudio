@@ -842,6 +842,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         setupMetronome();
         setupAnnotationCanvas();
         setupFullscreenAnnotation();
+        setupMetroMoreBtn();
         setupTempoSaveBtn();
         setupRefVideoControls();
         updateProgress();
@@ -1370,6 +1371,16 @@ let metroCtx = null;
 let metroInterval = null;
 let metroBpm = 140;
 let metroRunning = false;
+
+function setupMetroMoreBtn() {
+    const btn = document.getElementById('metroMoreBtn');
+    const extras = document.getElementById('metroExtras');
+    btn?.addEventListener('click', () => {
+        const open = extras.classList.toggle('open');
+        btn.classList.toggle('open', open);
+        btn.title = open ? 'Cerrar' : 'Más opciones';
+    });
+}
 
 function setupTempoSaveBtn() {
     document.getElementById('tempoSaveBtn')?.addEventListener('click', async () => {

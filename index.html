@@ -10,7 +10,7 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎸</text></svg>">
     <meta name="theme-color" content="#0f172a">
     <title>María Carolina · Antonio Lauro — Plan de Estudio</title>
-    <link rel="stylesheet" href="css/styles.css?v=6">
+    <link rel="stylesheet" href="css/styles.css?v=7">
 </head>
 <body>
     <div class="app-container">
@@ -111,7 +111,7 @@
                 <div class="reference-section">
                     <h3>Grabación de referencia <span class="ref-performer">— Lucija Iglič</span></h3>
                     <div class="local-video-container" id="localVideoWrap">
-                        <video id="refVideo" controls preload="metadata">
+                        <video id="refVideo" controls preload="metadata" playsinline webkit-playsinline x5-playsinline>
                             <source src="media/maria-carolina-1080p.mp4" type="video/mp4">
                         </video>
                     </div>
@@ -165,32 +165,6 @@
                     </div>
                 </div>
 
-                <!-- Metronome -->
-                <div class="metronome-section">
-                    <h3>Metrónomo</h3>
-                    <div class="metronome-container">
-                        <div class="metronome-display">
-                            <span class="metro-beat" id="metroBeat"></span>
-                            <span class="metro-bpm" id="metroBpm">140</span>
-                            <span class="metro-label">BPM</span>
-                        </div>
-                        <input type="range" class="metro-slider" id="metroSlider"
-                               min="40" max="240" value="140">
-                        <div class="metro-presets">
-                            <button class="metro-preset" data-bpm="60">60</button>
-                            <button class="metro-preset" data-bpm="80">80</button>
-                            <button class="metro-preset" data-bpm="100">100</button>
-                            <button class="metro-preset" data-bpm="120">120</button>
-                            <button class="metro-preset active" data-bpm="140">140 ♩</button>
-                        </div>
-                        <button class="metro-btn" id="metroBtn">▶ Iniciar</button>
-                        <div class="tempo-log-container">
-                            <button class="tempo-save-btn" id="tempoSaveBtn">Guardar sesión · <span id="tempoSaveBpmLabel">140</span> BPM</button>
-                            <div class="tempo-history" id="tempoHistory"></div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Score Image -->
                 <div class="manuscript-section">
                     <h3>Partitura <span class="zoom-hint">— toca para ampliar</span></h3>
@@ -217,6 +191,33 @@
                 <!-- Fullscreen overlay -->
                 <div class="score-overlay" id="scoreOverlay">
                     <img id="scoreOverlayImg" src="" alt="Partitura ampliada">
+                </div>
+
+                <!-- Metronome (compact) -->
+                <div class="metronome-section">
+                    <div class="metro-compact">
+                        <span class="metro-beat" id="metroBeat"></span>
+                        <div class="metro-bpm-display">
+                            <span class="metro-bpm" id="metroBpm">140</span>
+                            <span class="metro-label">BPM</span>
+                        </div>
+                        <input type="range" class="metro-slider" id="metroSlider" min="40" max="240" value="140">
+                        <button class="metro-btn" id="metroBtn">▶</button>
+                        <button class="metro-more-btn" id="metroMoreBtn" title="Más opciones">⋯</button>
+                    </div>
+                    <div class="metro-extras" id="metroExtras">
+                        <div class="metro-presets">
+                            <button class="metro-preset" data-bpm="60">60</button>
+                            <button class="metro-preset" data-bpm="80">80</button>
+                            <button class="metro-preset" data-bpm="100">100</button>
+                            <button class="metro-preset" data-bpm="120">120</button>
+                            <button class="metro-preset active" data-bpm="140">140 ♩</button>
+                        </div>
+                        <div class="tempo-log-container">
+                            <button class="tempo-save-btn" id="tempoSaveBtn">Guardar sesión · <span id="tempoSaveBpmLabel">140</span> BPM</button>
+                            <div class="tempo-history" id="tempoHistory"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Description -->
@@ -325,6 +326,6 @@
     </div>
 </div>
     <script src="js/data.js?v=7"></script>
-    <script src="js/app.js?v=13"></script>
+    <script src="js/app.js?v=14"></script>
 </body>
 </html>
